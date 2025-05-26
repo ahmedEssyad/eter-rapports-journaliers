@@ -1,4 +1,3 @@
-// server.js - Version améliorée avec authentification
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -60,7 +59,7 @@ async function connectToMongoDB() {
     }
 }
 
-// Schémas MongoDB
+// Schémas MongoDB (simplifiés)
 const UserSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -101,6 +100,70 @@ const FormSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', UserSchema);
 const Form = mongoose.model('Form', FormSchema);
+
+// Fonction de synchronisation des données temporaires vers MongoDB (simplifiée)
+async function syncTempDataToMongoDB() {
+    if (!isMongoConnected || tempStorage.length === 0) {
+        return;
+    }
+
+    console.log(`🔄 Début synchronisation: ${tempStorage.length} formulaires en attente`);
+    
+    const successSync = [];
+    const failedSync = [];
+
+    for (const formData of tempStorage) {
+        try {
+            // Vérifier si le formulaire n'existe pas déjà
+            const existingForm = await Form.findOne({ id: formData.id });
+            
+            if (!existingForm) {
+                const mongoForm = new Form(formData);
+                const savedForm = await mongoForm.save();
+                successSync.push(savedForm.id);
+                console.log(`✅ Formulaire synchronisé: ${savedForm.id}`);
+            } else {
+                successSync.push(formData.id);
+            }
+        } catch (error) {
+            console.error(`❌ Erreur sync formulaire ${formData.id}:`, error.message);
+            failedSync.push({ id: formData.id, error: error.message });
+        }
+    }
+
+    // Nettoyer tempStorage des formulaires synchronisés avec succès
+    tempStorage = tempStorage.filter(form => !successSync.includes(form.id));
+
+    console.log(`🎯 Synchronisation terminée:`);
+    console.log(`   ✅ Réussis: ${successSync.length}`);
+    console.log(`   ❌ Échoués: ${failedSync.length}`);
+    console.log(`   📦 Restants en mémoire: ${tempStorage.length}`);
+
+    return {
+        success: successSync,
+        failed: failedSync,
+        remaining: tempStorage.length
+    };
+}
+
+// Fonction à appeler lors de la reconnexion MongoDB
+async function onMongoDBReconnected() {
+    console.log('🔄 MongoDB reconnecté - Lancement synchronisation automatique');
+    
+    try {
+        const syncResult = await syncTempDataToMongoDB();
+        
+        if (syncResult && syncResult.success.length > 0) {
+            console.log(`🎉 ${syncResult.success.length} formulaires synchronisés avec succès !`);
+        }
+        
+        if (syncResult && syncResult.failed.length > 0) {
+            console.warn(`⚠️ ${syncResult.failed.length} formulaires n'ont pas pu être synchronisés`);
+        }
+    } catch (error) {
+        console.error('❌ Erreur lors de la synchronisation automatique:', error);
+    }
+}
 
 // Middleware d'authentification
 const authenticateToken = async (req, res, next) => {
@@ -165,7 +228,7 @@ function generateUniqueId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Routes de debug et monitoring
+// Routes de debug et monitoring (simplifiées)
 app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -186,9 +249,42 @@ app.get('/debug', (req, res) => {
         mongodb_connected: isMongoConnected,
         temp_users: tempUsers.length,
         temp_storage: tempStorage.length,
+        temp_storage_details: tempStorage.map(form => ({
+            id: form.id,
+            entree: form.entree,
+            submittedAt: form.submittedAt
+        })),
         jwt_secret_defined: !!process.env.JWT_SECRET,
-        mongodb_uri_defined: !!process.env.MONGODB_URI
+        mongodb_uri_defined: !!process.env.MONGODB_URI,
+        sync_needed: isMongoConnected && tempStorage.length > 0
     });
+});
+
+// Routes spécifiques pour les fichiers PWA et statiques
+app.get('/manifest.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, 'public', 'manifest.json'));
+});
+
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
+// Route pour les assets
+app.get('/assets/*', (req, res) => {
+    const filePath = path.join(__dirname, 'public', req.path);
+    res.sendFile(filePath);
+});
+
+// Middleware pour traiter les fichiers statiques avant les routes API
+app.use((req, res, next) => {
+    // Si c'est un fichier statique, laisse express.static s'en charger
+    if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
+        return next();
+    }
+    next();
 });
 
 // Routes d'authentification
@@ -273,7 +369,7 @@ app.get('/api/auth/verify', authenticateToken, (req, res) => {
     });
 });
 
-// Routes pour les formulaires (publiques)
+// Routes pour les formulaires (publiques) - simplifié
 app.post('/api/forms', async (req, res) => {
     try {
         console.log('Nouvelle soumission de formulaire ETER reçue');
@@ -344,17 +440,17 @@ app.post('/api/forms', async (req, res) => {
             try {
                 const mongoForm = new Form(formData);
                 savedForm = await mongoForm.save();
-                console.log(`Formulaire ETER sauvegardé en MongoDB: ${savedForm.id}`);
+                console.log(`✅ Formulaire ETER sauvegardé en MongoDB: ${savedForm.id}`);
             } catch (error) {
                 console.error('Erreur MongoDB:', error);
                 tempStorage.push(formData);
                 savedForm = formData;
-                console.log(`Formulaire ETER sauvegardé en mémoire temporaire: ${savedForm.id}`);
+                console.log(`📦 Formulaire ETER sauvegardé en mémoire temporaire: ${savedForm.id}`);
             }
         } else {
             tempStorage.push(formData);
             savedForm = formData;
-            console.log(`Formulaire ETER sauvegardé en mémoire temporaire: ${savedForm.id}`);
+            console.log(`📦 Formulaire ETER sauvegardé en mémoire temporaire: ${savedForm.id}`);
         }
         
         res.status(201).json({
@@ -378,7 +474,7 @@ app.post('/api/forms', async (req, res) => {
     }
 });
 
-// Routes admin (protégées)
+// Routes admin (protégées) - simplifiées
 app.get('/api/admin/stats', authenticateToken, async (req, res) => {
     try {
         let totalForms, formsToday, totalVehicles, totalGasoil;
@@ -527,6 +623,51 @@ app.get('/api/admin/reports/:id', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erreur lors de la récupération du rapport'
+        });
+    }
+});
+
+// Route pour voir les données en mémoire temporaire
+app.get('/api/admin/temp-data', authenticateToken, (req, res) => {
+    res.json({
+        success: true,
+        temp_storage_count: tempStorage.length,
+        temp_storage: tempStorage.map(form => ({
+            id: form.id,
+            entree: form.entree,
+            origine: form.origine,
+            depot: form.depot,
+            submittedAt: form.submittedAt,
+            vehicles_count: form.vehicles ? form.vehicles.length : 0
+        })),
+        mongodb_connected: isMongoConnected,
+        can_sync: isMongoConnected && tempStorage.length > 0
+    });
+});
+
+// Route pour déclencher manuellement la synchronisation
+app.post('/api/admin/sync', authenticateToken, async (req, res) => {
+    try {
+        if (!isMongoConnected) {
+            return res.status(503).json({
+                success: false,
+                message: 'MongoDB non connecté - synchronisation impossible'
+            });
+        }
+
+        const syncResult = await syncTempDataToMongoDB();
+        
+        res.json({
+            success: true,
+            message: 'Synchronisation manuelle terminée',
+            result: syncResult
+        });
+    } catch (error) {
+        console.error('Erreur synchronisation manuelle:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la synchronisation',
+            error: error.message
         });
     }
 });
@@ -1006,6 +1147,8 @@ function generateSingleReportPDF(doc, form) {
         }
     }
 }
+
+// Routes de navigation
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'eter-form.html'));
 });
@@ -1038,10 +1181,15 @@ app.use((req, res) => {
     });
 });
 
-// Gestion événements MongoDB
-mongoose.connection.on('connected', () => {
+// Gestion événements MongoDB avec synchronisation automatique
+mongoose.connection.on('connected', async () => {
     console.log('✅ MongoDB connecté');
     isMongoConnected = true;
+    
+    // Déclencher la synchronisation automatique
+    setTimeout(async () => {
+        await onMongoDBReconnected();
+    }, 1000); // Attendre 1 seconde pour être sûr que la connexion est stable
 });
 
 mongoose.connection.on('error', (err) => {
@@ -1052,6 +1200,17 @@ mongoose.connection.on('error', (err) => {
 mongoose.connection.on('disconnected', () => {
     console.log('❌ MongoDB déconnecté');
     isMongoConnected = false;
+});
+
+// Événement de reconnexion
+mongoose.connection.on('reconnected', async () => {
+    console.log('🔄 MongoDB reconnecté');
+    isMongoConnected = true;
+    
+    // Déclencher la synchronisation automatique
+    setTimeout(async () => {
+        await onMongoDBReconnected();
+    }, 1000);
 });
 
 // Gestion de la fermeture
@@ -1070,6 +1229,10 @@ app.listen(PORT, () => {
     console.log(`🔐 Interface admin sur: http://localhost:${PORT}/admin-dashboard`);
     console.log(`👤 Connexion admin: http://localhost:${PORT}/login.html`);
     console.log(`💡 Identifiants par défaut: admin / admin123`);
+    
+    if (tempStorage.length > 0) {
+        console.log(`📦 ${tempStorage.length} formulaires en mémoire temporaire`);
+    }
 });
 
 module.exports = app;

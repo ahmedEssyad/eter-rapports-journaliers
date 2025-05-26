@@ -1,58 +1,64 @@
 {
-  "name": "ETER - Rapports Journaliers",
-  "short_name": "ETER Reports",
-  "description": "Application de gestion des rapports journaliers pour ETER",
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#2d3a4f",
-  "theme_color": "#2d3a4f",
-  "scope": "/",
-  
-  "icons": [
+  "version": 2,
+  "builds": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192' fill='%232d3a4f'><rect width='192' height='192' rx='24' fill='%23667eea'/><path d='M48 72h96v8H48zm0 24h96v8H48zm0 24h64v8H48z' fill='white'/><circle cx='144' cy='48' r='16' fill='%23f39c12'/></svg>",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%232d3a4f'><rect width='512' height='512' rx='64' fill='%23667eea'/><path d='M128 192h256v32H128zm0 64h256v32H128zm0 64h192v32H128z' fill='white'/><circle cx='384' cy='128' r='48' fill='%23f39c12'/></svg>",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "server.js",
+      "use": "@vercel/node"
     }
   ],
-  
-  "categories": ["productivity", "business", "utilities"],
-  
-  "shortcuts": [
+  "routes": [
     {
-      "name": "Nouveau formulaire",
-      "short_name": "Nouveau",
-      "description": "Créer un nouveau formulaire employé",
-      "url": "/",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23667eea'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z'/></svg>",
-          "sizes": "96x96"
-        }
-      ]
+      "src": "/manifest.json",
+      "dest": "/public/manifest.json"
     },
     {
-      "name": "Administration",
-      "short_name": "Admin",
-      "description": "Interface d'administration",
-      "url": "/login.html",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23667eea'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z'/></svg>",
-          "sizes": "96x96"
-        }
-      ]
+      "src": "/sw.js",
+      "dest": "/public/sw.js"
+    },
+    {
+      "src": "/(css|js|assets|signatures)/.*",
+      "dest": "/public/$0"
+    },
+    {
+      "src": "/.*\\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map|json)$",
+      "dest": "/public/$0"
+    },
+    {
+      "src": "/health",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/debug",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/login.html",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/admin-dashboard",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/admin",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/",
+      "dest": "/server.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
     }
   ],
-  
-  "related_applications": [],
-  "prefer_related_applications": false
+  "functions": {
+    "server.js": {
+      "maxDuration": 30
+    }
+  }
 }
