@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API ETER</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test API ETER</h1>
+    <button onclick="testAPI()">Tester API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Test en cours...</p>';
+            
+            const baseURL = window.location.origin;
+            console.log('Base URL:', baseURL);
+
+            try {
+                // Test 1: Health check
+                console.log('Test 1: Health check');
+                const healthResponse = await fetch(`${baseURL}/health`);
+                addResult('Health Check', healthResponse.ok, await healthResponse.text());
+
+                // Test 2: API login
+                console.log('Test 2: Login API');
+                const loginResponse = await fetch(`${baseURL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                
+                const loginText = await loginResponse.text();
+                addResult('Login API', loginResponse.ok, loginText);
+
+                // Test 3: Variables d'environnement
+                addResult('Environment Info', true, JSON.stringify({
+                    origin: window.location.origin,
+                    host: window.location.host,
+                    protocol: window.location.protocol,
+                    pathname: window.location.pathname
+                }, null, 2));
+
+            } catch (error) {
+                addResult('Erreur générale', false, error.message);
+            }
+        }
+
+        function addResult(title, success, data) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<h3>${success ? '✅' : '❌'} ${title}</h3><pre>${data}</pre>`;
+            results.appendChild(div);
+        }
+
+        // Auto-test
+        window.onload = () => setTimeout(testAPI, 1000);
+    </script>
+</body>
+</html>

@@ -165,6 +165,32 @@ function generateUniqueId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
+// Routes de debug et monitoring
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        mongodb: isMongoConnected ? 'Connected' : 'Disconnected',
+        environment: process.env.NODE_ENV || 'development',
+        port: PORT,
+        env_vars: {
+            mongodb_uri: !!process.env.MONGODB_URI,
+            jwt_secret: !!process.env.JWT_SECRET
+        }
+    });
+});
+
+app.get('/debug', (req, res) => {
+    res.json({
+        message: 'Debug endpoint actif',
+        mongodb_connected: isMongoConnected,
+        temp_users: tempUsers.length,
+        temp_storage: tempStorage.length,
+        jwt_secret_defined: !!process.env.JWT_SECRET,
+        mongodb_uri_defined: !!process.env.MONGODB_URI
+    });
+});
+
 // Routes d'authentification
 app.post('/api/auth/login', async (req, res) => {
     try {
