@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Formulaire de rapport journalier ETER - Fonctionne hors ligne">
+    <meta name="theme-color" content="#1a56db">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ETER Reports">
+    <title>ETER - Formulaire Employé PWA</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+   
+    <!-- <link rel="stylesheet" href="/css/pwa-offline.css"> -->
+     <!-- <link rel="stylesheet" href="/css/pwa-enhancements.css">  -->
+     <link rel="stylesheet" href="./css/eter-form-bootstrap.css">
+    <!-- PWA Manifest and Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%231a56db'><rect width='32' height='32' rx='4'/><path d='M8 12h16v2H8zm0 4h16v2H8zm0 4h10v2H8z' fill='white'/></svg>">
+    <link rel="apple-touch-icon" href="/assets/icon-192x192.png">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous">
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <header class="eter-header text-center py-4 mb-4">
+        <h1 class="display-6 fw-bold">Etablissement des Travaux d'Entretien Routier -ETER-</h1>
+        <h2 class="h5 text-muted">Direction des Approvisionnements et Logistique -DAL-</h2>
+        <h3 class="mt-3 fs-4">Rapport Journalier</h3>
+    </header>
+
+    <!-- Main Form -->
+    <div class="container py-4">
+        <form id="eterForm">
+            <!-- General Information Section -->
+            <div class="report-section card mb-4 shadow-sm">
+                <div class="section-header card-header bg-primary text-white">Informations Générales</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-3">
+                            <div class="form-group">
+                                <label for="entree" class="form-label">Entrée</label>
+                                <input type="text" id="entree" name="entree" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="form-group">
+                                <label for="origine" class="form-label">Origine</label>
+                                <input type="text" id="origine" name="origine" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="form-group">
+                                <label for="depot" class="form-label">Dépôt</label>
+                                <input type="text" id="depot" name="depot" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <div class="form-group">
+                                <label for="chantier" class="form-label">Chantier</label>
+                                <input type="text" id="chantier" name="chantier" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Date and Stock Section -->
+                    <div class="row g-3 mt-3">
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" id="date" name="date" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="stockDebut" class="form-label">Stock Début</label>
+                                <input type="number" id="stockDebut" name="stockDebut" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="stockFin" class="form-label">Stock Fin</label>
+                                <input type="number" id="stockFin" name="stockFin" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="sortieGasoil" class="form-label">Sortie Gasoil</label>
+                                <input type="number" id="sortieGasoil" name="sortieGasoil" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="debutIndex" class="form-label">Début Index</label>
+                                <input type="number" id="debutIndex" name="debutIndex" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-2">
+                            <div class="form-group">
+                                <label for="finIndex" class="form-label">Fin Index</label>
+                                <input type="number" id="finIndex" name="finIndex" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Section -->
+            <div class="report-section card mb-4 shadow-sm">
+                <div class="section-header card-header bg-primary text-white">Matricule CGG</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="vehicle-table table table-striped table-hover" id="vehicleTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Matricule</th>
+                                    <th scope="col">Nom Chauffeur</th>
+                                    <th scope="col">Heure Revif</th>
+                                    <th scope="col">Qté Livrée</th>
+                                    <th scope="col">Lieu de Comptage</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vehicleTableBody">
+                                <!-- Vehicle rows will be added dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" class="btn btn-warning mt-3" id="addVehicleRow">
+                        <i class="fas fa-plus"></i> Ajouter un véhicule
+                    </button>
+                </div>
+            </div>
+
+            <!-- Signatures Section -->
+            <div class="report-section card mb-4 shadow-sm">
+                <div class="section-header card-header bg-primary text-white">Signatures</div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="signature-box border rounded p-3" id="signatureResponsable">
+                                <h4 class="fs-5 mb-3">Signature Responsable</h4>
+                                <img src="" alt="Signature du responsable" class="img-fluid" style="display: none;">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="signature-box border rounded p-3" id="signatureChef">
+                                <h4 class="fs-5 mb-3">Signature Chef</h4>
+                                <img src="" alt="Signature du chef" class="img-fluid" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-primary me-2" id="saveForm">
+                    <i class="fas fa-save"></i> Enregistrer
+                </button>
+                <button type="button" class="btn btn-danger" id="resetForm">
+                    <i class="fas fa-undo"></i> Réinitialiser
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Signature Modal -->
+    <div class="modal fade" id="signatureModal" tabindex="-1" aria-labelledby="signatureModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="signatureModalLabel">Signature</h2>
+                    <button type="button" class="btn-close" id="closeSignatureModal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="canvas-container">
+                        <canvas id="signatureCanvas" class="border rounded" width="500" height="300"></canvas>
+                    </div>
+                    <div class="modal-buttons mt-3">
+                        <button type="button" class="btn btn-danger me-2" id="clearSignature">
+                            <i class="fas fa-trash"></i> Effacer
+                        </button>
+                        <button type="button" class="btn btn-success" id="saveSignature">
+                            <i class="fas fa-save"></i> Sauvegarder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Network Status Indicator -->
+    <div id="networkStatus" class="network-status">
+        <i class="fas fa-wifi"></i> Vérification...
+    </div>
+
+    <!-- Sync Button -->
+    <button id="syncButton" class="sync-button" style="display: none;">
+        <i class="fas fa-sync"></i> Synchroniser
+        <span id="pendingFormsCount" class="pending-count-badge" style="display: none;">0</span>
+    </button>
+
+    <!-- Pending Forms Panel -->
+    <div id="pendingFormsPanel" class="pending-forms-panel">
+        <div class="pending-forms-header">
+            <h3><i class="fas fa-file-alt"></i> Formulaires en attente</h3>
+            <span id="pendingFormsCountBadge" class="pending-count-badge">0</span>
+            <button onclick="togglePendingPanel()" class="toast-close" aria-label="Fermer le panneau">
+                <span aria-hidden="true">×</span>
+            </button>
+        </div>
+        <div class="pending-forms-content">
+            <div id="pendingFormsList" class="no-pending">
+                Aucun formulaire en attente
+            </div>
+        </div>
+    </div>
+
+    <!-- Sync Progress Bar -->
+    <div id="syncProgress" class="sync-progress"></div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="debug-panel"></div>
+
+    <!-- Bootstrap 5 JS (with Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Custom Scripts -->
+    <script src="/js/offline-manager.js" defer></script>
+    <script src="/js/eter-form.js" defer></script>
+    <script>
+        // 🔧 Variables globales
+        let eterForm;
+        let showingPendingPanel = false;
+        let deferredPrompt;
+
+        // 📱 Installation PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            showInstallButton();
+        });
+
+        function showInstallButton() {
+            const installButton = document.createElement('button');
+            installButton.id = 'installButton';
+            installButton.className = 'install-button btn btn-primary';
+            installButton.innerHTML = '<i class="fas fa-download"></i> Installer l\'app';
+            installButton.onclick = installPWA;
+            document.body.appendChild(installButton);
+        }
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    offlineManager.showToast('Application installée avec succès!', 'success');
+                }
+                deferredPrompt = null;
+                document.getElementById('installButton')?.remove();
+            }
+        }
+
+        // 🔄 Gestion panel formulaires en attente
+        function togglePendingPanel() {
+            const panel = document.getElementById('pendingFormsPanel');
+            showingPendingPanel = !showingPendingPanel;
+            if (showingPendingPanel) {
+                panel.classList.add('show');
+            } else {
+                panel.classList.remove('show');
+            }
+        }
+
+        // 📋 Affichage automatique si formulaires en attente
+        function checkPendingForms() {
+            if (offlineManager && offlineManager.pendingForms.size > 0) {
+                setTimeout(() => {
+                    if (!showingPendingPanel) {
+                        togglePendingPanel();
+                    }
+                }, 2000);
+            }
+        }
+
+        // 🚀 Initialisation complète
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM chargé - Initialisation ETER PWA');
+        });
+
+        // 📡 Écouter la disponibilité d'OfflineManager
+        window.addEventListener('offlineManagerReady', function(event) {
+            console.log('✅ OfflineManager prêt - Initialisation app');
+            initializeApp();
+        });
+
+        // 🔄 Fallback si l'événement n'est pas émis
+        setTimeout(() => {
+            if (typeof ETERForm !== 'undefined' && window.offlineManager) {
+                console.log('🔄 Initialisation fallback');
+                initializeApp();
+            } else {
+                console.warn('⚠️ Problème chargement modules');
+            }
+        }, 2000);
+
+        // 🎯 Initialisation de l'application
+        function initializeApp() {
+            console.log('🎯 Début initializeApp');
+            if (eterForm) {
+                console.log('✅ ETERForm déjà initialisé, ignoré');
+                return;
+            }
+            try {
+                if (typeof ETERForm === 'undefined') {
+                    console.error('❌ ETERForm non défini');
+                    return;
+                }
+                if (!window.offlineManager) {
+                    console.error('❌ offlineManager non disponible');
+                    return;
+                }
+                const form = document.getElementById('eterForm');
+                if (!form) {
+                    console.error('❌ Formulaire #eterForm non trouvé dans le DOM');
+                    return;
+                }
+                eterForm = new ETERForm();
+                console.log('✅ ETERForm initialisé');
+                checkPendingForms();
+                const syncButton = document.getElementById('syncButton');
+                if (syncButton) {
+                    syncButton.onclick = () => {
+                        if (offlineManager.isOnline) {
+                            offlineManager.syncPendingForms();
+                        } else {
+                            offlineManager.showToast('Connexion requise pour synchroniser', 'warning');
+                        }
+                    };
+                    console.log('✅ Bouton sync configuré');
+                }
+                console.log('🎉 Application ETER PWA initialisée avec succès');
+            } catch (error) {
+                console.error('❌ Erreur initialisation:', error);
+            }
+        }
+
+        // 🔧 Enregistrement Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('✅ Service Worker enregistré:', registration);
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    offlineManager?.showToast('Nouvelle version disponible - Redémarrez l\'app', 'info');
+                                }
+                            });
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('❌ Erreur Service Worker:', error);
+                    });
+            });
+        }
+
+        // Debug function
+        function debug(message) {
+            console.log(message);
+            const debugPanel = document.getElementById('debugPanel');
+            if (debugPanel) {
+                debugPanel.innerHTML += `<div>${message}</div>`;
+                debugPanel.classList.add('active');
+            }
+        }
+
+        // Test if JavaScript is loaded
+        console.log('Page loaded');
+
+        // Test if elements exist
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const elements = {
+                'signatureResponsable': document.getElementById('signatureResponsable'),
+                'signatureChef': document.getElementById('signatureChef'),
+                'signatureModal': document.getElementById('signatureModal'),
+                'signatureCanvas': document.getElementById('signatureCanvas'),
+                'saveSignature': document.getElementById('saveSignature'),
+                'clearSignature': document.getElementById('clearSignature'),
+                'closeSignatureModal': document.getElementById('closeSignatureModal')
+            };
+            for (const [id, element] of Object.entries(elements)) {
+                console.log(`${id}: ${element ? 'Found' : 'Not found'}`);
+            }
+        });
+    </script>
+</body>
+</html>

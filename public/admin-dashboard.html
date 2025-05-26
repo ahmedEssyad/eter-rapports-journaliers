@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - ETER</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/assets/icon-192x192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="dashboard-container">
+            <h1>Dashboard Administrateur ETER</h1>
+            <p>Système de gestion des rapports journaliers</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="admin-nav">
+        <div class="dashboard-container">
+            <div class="nav-links">
+                <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                    📊 Tableau de bord
+                </a>
+                <a href="#reports" class="nav-link" data-section="reports">
+                    📋 Rapports
+                </a>
+                <a href="#settings" class="nav-link" data-section="settings">
+                    ⚙️ Paramètres
+                </a>
+            </div>
+            <div class="user-info">
+                <span id="welcomeUser">Bienvenue, Admin</span>
+                <button class="logout-btn" onclick="logout()">
+                    🚪 Déconnexion
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="icon">📋</div>
+                    <h3>Total Rapports</h3>
+                    <div class="value" id="totalReports">0</div>
+                    <div class="change" id="reportsChange">+0% ce mois</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">🚛</div>
+                    <h3>Véhicules Actifs</h3>
+                    <div class="value" id="totalVehicles">0</div>
+                    <div class="change" id="vehiclesChange">+0% ce mois</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">👥</div>
+                    <h3>Conducteurs</h3>
+                    <div class="value" id="totalDrivers">0</div>
+                    <div class="change" id="driversChange">+0% ce mois</div>
+                </div>
+                <div class="stat-card">
+                    <div class="icon">⛽</div>
+                    <h3>Carburant Distribué</h3>
+                    <div class="value" id="totalFuel">0</div>
+                    <div class="change" id="fuelChange">L ce mois</div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3>Actions Rapides</h3>
+                <div class="quick-actions-grid">
+                    <a href="#reports" class="quick-action-btn" onclick="showSection('reports')">
+                        <i>📄</i>
+                        Nouveau Rapport
+                    </a>
+                    <button class="quick-action-btn" onclick="exportAllReports()">
+                        <i>📤</i>
+                        Exporter Tout
+                    </button>
+                    <button class="quick-action-btn" onclick="refreshData()">
+                        <i>🔄</i>
+                        Actualiser
+                    </button>
+                    <button class="quick-action-btn" onclick="showBackup()">
+                        <i>💾</i>
+                        Sauvegarde
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports-section" class="content-section" style="display: none;">
+            <!-- Filters -->
+            <div class="filters-section">
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="dateFilter">Date</label>
+                        <input type="date" id="dateFilter">
+                    </div>
+                    <div class="filter-group">
+                        <label for="vehicleFilter">Véhicule</label>
+                        <select id="vehicleFilter">
+                            <option value="">Tous les véhicules</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">Statut</label>
+                        <select id="statusFilter">
+                            <option value="">Tous les statuts</option>
+                            <option value="completed">Complété</option>
+                            <option value="pending">En attente</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            🔍 Filtrer
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-section">
+                <button class="btn btn-success" onclick="exportSelectedReports()">
+                    📤 Exporter Sélection
+                </button>
+                <div class="export-menu">
+                    <button class="btn btn-info" onclick="toggleExportMenu()">
+                        📊 Export Avancé ▼
+                    </button>
+                    <div class="export-dropdown" id="exportDropdown">
+                        <button class="export-option" onclick="exportToExcel()">
+                            📊 Excel (.xlsx)
+                        </button>
+                        <button class="export-option" onclick="exportToCSV()">
+                            📄 CSV
+                        </button>
+                        <button class="export-option" onclick="exportToPDF()">
+                            📋 PDF
+                        </button>
+                    </div>
+                </div>
+                <button class="btn btn-warning" onclick="refreshReports()">
+                    🔄 Actualiser
+                </button>
+            </div>
+
+            <!-- Reports Table -->
+            <div class="reports-section">
+                <div class="section-header">
+                    <h2>Liste des Rapports</h2>
+                </div>
+                <div class="table-actions">
+                    <div class="table-search">
+                        <input type="text" class="search-input" placeholder="Rechercher..." id="searchInput">
+                        <button class="btn btn-sm btn-primary" onclick="searchReports()">
+                            🔍 Rechercher
+                        </button>
+                    </div>
+                    <div class="table-info" id="tableInfo">
+                        0 rapports trouvés
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                </th>
+                                <th class="sortable" onclick="sortTable('date')">Date</th>
+                                <th class="sortable" onclick="sortTable('vehicleId')">Véhicule</th>
+                                <th class="sortable" onclick="sortTable('depot')">Dépôt</th>
+                                <th class="sortable" onclick="sortTable('chantier')">Chantier</th>
+                                <th class="sortable" onclick="sortTable('totalFuel')">Carburant (L)</th>
+                                <th class="sortable" onclick="sortTable('driversCount')">Conducteurs</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="9" class="loading">Chargement des données...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <div class="pagination" id="pagination">
+                    <!-- Pagination will be generated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section" style="display: none;">
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">Paramètres Système</h3>
+                </div>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label>Sauvegarde Automatique</label>
+                        <select id="autoBackup">
+                            <option value="daily">Quotidienne</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly">Mensuelle</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Rétention des Données</label>
+                        <select id="dataRetention">
+                            <option value="1">1 an</option>
+                            <option value="2">2 ans</option>
+                            <option value="5">5 ans</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-primary" onclick="saveSettings()">
+                            💾 Sauvegarder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Report Details -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Détails du Rapport</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Toasts will be added dynamically -->
+    </div>
+
+    <script src="/js/admin-dashboard.js"></script>
+</body>
+</html>

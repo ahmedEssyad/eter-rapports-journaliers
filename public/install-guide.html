@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Page d'accueil pour l'application ETER PWA - Installez ou utilisez dans le navigateur">
+    <meta name="theme-color" content="#1a56db">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ETER Reports">
+    <title>ETER - Bienvenue</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/eter-form-modern.css">
+    <link rel="stylesheet" href="/css/pwa-offline.css">
+    <link rel="stylesheet" href="/css/pwa-enhancements.css">
+    <!-- PWA Manifest and Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='%231a56db'><rect width='32' height='32' rx='4'/><path d='M8 12h16v2H8zm0 4h16v2H8zm0 4h10v2H8z' fill='white'/></svg>">
+    <link rel="apple-touch-icon" href="/assets/icon-192x192.png">
+    <style>
+        /* Custom styles to align with Bootstrap and previous design */
+        .platform-card {
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .install-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+        }
+        .status-installed {
+            background: rgba(22, 163, 74, 0.1);
+            color: #16a34a;
+        }
+        .status-installable {
+            background: rgba(26, 86, 219, 0.1);
+            color: #1a56db;
+        }
+        .status-not-supported {
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Header -->
+    <header class="text-center py-5 mb-4 bg-primary text-white">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Bienvenue sur ETER PWA</h1>
+            <p class="lead">Installez l'application ou utilisez-la directement dans votre navigateur</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container py-5">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="platform-card card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-mobile-alt fa-3x mb-3 text-primary"></i>
+                        <h3 class="card-title fs-4">Installer l'Application</h3>
+                        <p class="card-text">Ajoutez ETER à votre écran d'accueil pour une expérience native.</p>
+                        <div id="installStatus" class="install-status mb-3" aria-live="polite">
+                            <span>📱</span> Vérification...
+                        </div>
+                        <button id="installBtn" class="btn btn-primary d-none" aria-label="Installer l'application ETER">
+                            <i class="fas fa-download"></i> Installer maintenant
+                        </button>
+                        <a href="/eter-form.html" class="btn btn-outline-secondary mt-2">
+                            <i class="fas fa-globe"></i> Utiliser dans le navigateur
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Custom Script -->
+    <script>
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+        const installStatus = document.getElementById('installStatus');
+
+        // Détecter si l'app est déjà installée
+        function checkInstallStatus() {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                installStatus.innerHTML = '<span><i class="fas fa-check"></i></span> Application déjà installée !';
+                installStatus.className = 'install-status status-installed';
+                return;
+            }
+
+            if ('serviceWorker' in navigator) {
+                installStatus.innerHTML = '<span><i class="fas fa-mobile-alt"></i></span> Prêt pour l\'installation';
+                installStatus.className = 'install-status status-installable';
+            } else {
+                installStatus.innerHTML = '<span><i class="fas fa-times"></i></span> Installation non supportée';
+                installStatus.className = 'install-status status-not-supported';
+            }
+        }
+
+        // Gérer l'événement d'installation PWA
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.classList.remove('d-none');
+            
+            installStatus.innerHTML = '<span><i class="fas fa-bullseye"></i></span> Installation disponible !';
+            installStatus.className = 'install-status status-installable';
+        });
+
+        // Bouton d'installation
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    installStatus.innerHTML = '<span><i class="fas fa-check"></i></span> Installation réussie !';
+                    installStatus.className = 'install-status status-installed';
+                    installBtn.classList.add('d-none');
+                    
+                    setTimeout(() => {
+                        window.location.href = '/eter-form.html';
+                    }, 2000);
+                } else {
+                    installStatus.innerHTML = '<span><i class="fas fa-times"></i></span> Installation annulée';
+                    installStatus.className = 'install-status status-not-supported';
+                }
+                
+                deferredPrompt = null;
+            }
+        });
+
+        // Détecter l'installation réussie
+        window.addEventListener('appinstalled', () => {
+            installStatus.innerHTML = '<span><i class="fas fa-party-horn"></i></span> Application installée avec succès !';
+            installStatus.className = 'install-status status-installed';
+            installBtn.classList.add('d-none');
+            
+            setTimeout(() => {
+                window.location.href = '/eter-form.html';
+            }, 3000);
+        });
+
+        // Animation des cartes au scroll
+        function animateOnScroll() {
+            const cards = document.querySelectorAll('.platform-card');
+            
+            cards.forEach((card, index) => {
+                const rect = card.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                
+                if (isVisible) {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                    card.style.animationDelay = `${index * 0.1}s`;
+                }
+            });
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            checkInstallStatus();
+            
+            // Animation initiale des cartes
+            const cards = document.querySelectorAll('.platform-card');
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            });
+            
+            setTimeout(animateOnScroll, 100);
+            window.addEventListener('scroll', animateOnScroll);
+        });
+
+        // Enregistrer le Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(() => console.log('SW registration failed'));
+        }
+    </script>
+</body>
+</html>

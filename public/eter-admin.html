@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration ETER - Dashboard</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <style>
+        .admin-header {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 0.9em;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #27ae60;
+            margin: 10px 0;
+        }
+
+        .reports-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .reports-table th,
+        .reports-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .reports-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .reports-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-right: 5px;
+        }
+
+        .view-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .export-btn {
+            background: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            margin: 20px 0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            color: white;
+            display: none;
+            z-index: 1001;
+        }
+
+        .notification.success {
+            background: #27ae60;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        .report-details {
+            padding: 20px;
+        }
+        
+        .detail-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .detail-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .detail-section p {
+            margin: 8px 0;
+            color: #495057;
+        }
+        
+        .vehicle-details-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .vehicle-details-table th,
+        .vehicle-details-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .vehicle-details-table th {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+        
+        .signatures-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .signature-box {
+            text-align: center;
+        }
+        
+        .signature-box h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .signature-box img {
+            max-width: 100%;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 5px;
+            background: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="admin-header">
+        <h1>Administration ETER</h1>
+        <p>Tableau de bord des rapports journaliers</p>
+    </div>
+
+    <div class="container">
+        <!-- Statistiques -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <h3>Total Rapports</h3>
+                <div class="value" id="totalReports">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Rapports Aujourd'hui</h3>
+                <div class="value" id="todayReports">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Véhicules</h3>
+                <div class="value" id="totalVehicles">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Gasoil Livré</h3>
+                <div class="value" id="totalGasoil">-</div>
+            </div>
+        </div>
+
+        <!-- Bouton Export -->
+        <button class="export-btn" onclick="exportToCSV()">
+            📊 Exporter en CSV
+        </button>
+
+        <!-- Tableau des rapports -->
+        <div style="overflow-x: auto;">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Dépôt</th>
+                        <th>Chantier</th>
+                        <th>Stock Début</th>
+                        <th>Stock Fin</th>
+                        <th>Sortie Gasoil</th>
+                        <th>Véhicules</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsTableBody">
+                    <!-- Les rapports seront insérés ici -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal de détails -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeDetailModal()">&times;</span>
+            <h2>Détails du Rapport</h2>
+            <div id="reportDetails">
+                <!-- Les détails seront insérés ici -->
+            </div>
+            <div style="text-align: right; margin-top: 20px;">
+                <button id="downloadPdfBtn" class="export-btn" style="background:#34495e; color:white;">📄 Télécharger PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+
+    <script>
+        class ETERAdmin {
+            constructor() {
+                this.loadReports();
+                this.loadStats();
+            }
+
+            async loadReports() {
+                try {
+                    const response = await fetch('/api/forms');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.displayReports(data.forms);
+                    } else {
+                        this.showNotification('Erreur lors du chargement des rapports', 'error');
+                    }
+                } catch (error) {
+                    this.showNotification('Erreur de connexion au serveur', 'error');
+                }
+            }
+
+            async loadStats() {
+                try {
+                    const response = await fetch('/api/stats');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.updateStats(data.stats);
+                    }
+                } catch (error) {
+                    console.error('Erreur lors du chargement des statistiques:', error);
+                }
+            }
+
+            displayReports(reports) {
+                const tbody = document.getElementById('reportsTableBody');
+                tbody.innerHTML = '';
+
+                reports.forEach(report => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(report.date).toLocaleDateString()}</td>
+                        <td>${report.depot}</td>
+                        <td>${report.chantier}</td>
+                        <td>${report.stockDebut || '-'}</td>
+                        <td>${report.stockFin || '-'}</td>
+                        <td>${report.sortieGasoil || '-'}</td>
+                        <td>${report.vehicles ? report.vehicles.length : 0}</td>
+                        <td>
+                            <button class="action-btn view-btn" onclick="eterAdmin.viewReport('${report.id}')">
+                                👁️ Voir
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+
+            updateStats(stats) {
+                document.getElementById('totalReports').textContent = stats.totalForms;
+                document.getElementById('todayReports').textContent = stats.formsToday;
+                document.getElementById('totalVehicles').textContent = stats.totalVehicles;
+                document.getElementById('totalGasoil').textContent = stats.totalGasoil;
+            }
+
+            async viewReport(id) {
+                try {
+                    const response = await fetch(`/api/forms/${id}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.displayReportDetails(data.form);
+                    } else {
+                        this.showNotification('Erreur lors du chargement des détails', 'error');
+                    }
+                } catch (error) {
+                    this.showNotification('Erreur de connexion au serveur', 'error');
+                }
+            }
+
+            displayReportDetails(report) {
+                const details = document.getElementById('reportDetails');
+                details.innerHTML = `
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Date:</label>
+                            <p>${new Date(report.date).toLocaleDateString()}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Dépôt:</label>
+                            <p>${report.depot}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Chantier:</label>
+                            <p>${report.chantier}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Début:</label>
+                            <p>${report.stockDebut || '-'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock Fin:</label>
+                            <p>${report.stockFin || '-'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Sortie Gasoil:</label>
+                            <p>${report.sortieGasoil || '-'}</p>
+                        </div>
+                    </div>
+                    <h3>Véhicules</h3>
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Matricule</th>
+                                <th>Chauffeur</th>
+                                <th>Heure Revif</th>
+                                <th>Quantité Livrée</th>
+                                <th>Lieu Comptage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${report.vehicles.map(vehicle => `
+                                <tr>
+                                    <td>${vehicle.matricule}</td>
+                                    <td>${vehicle.chauffeur}</td>
+                                    <td>${vehicle.heureRevif || '-'}</td>
+                                    <td>${vehicle.quantiteLivree || '-'}</td>
+                                    <td>${vehicle.lieuComptage || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="signatures">
+                        <h3>Signatures</h3>
+                        <div class="signature-grid">
+                            <div>
+                                <h4>Responsable</h4>
+                                <img src="${report.signatureUrlResponsable}" alt="Signature Responsable" style="max-width: 200px;">
+                            </div>
+                            <div>
+                                <h4>Chef</h4>
+                                <img src="${report.signatureUrlChef}" alt="Signature Chef" style="max-width: 200px;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('detailModal').style.display = 'block';
+                setCurrentReportId(report.id);
+            }
+
+            showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        let currentReportId = null;
+
+        function setCurrentReportId(id) {
+            currentReportId = id;
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
+            currentReportId = null;
+        }
+
+        function exportToCSV() {
+            const reports = Array.from(document.getElementById('reportsTableBody').children).map(row => {
+                const cells = row.cells;
+                return {
+                    date: cells[0].textContent,
+                    depot: cells[1].textContent,
+                    chantier: cells[2].textContent,
+                    stockDebut: cells[3].textContent,
+                    stockFin: cells[4].textContent,
+                    sortieGasoil: cells[5].textContent,
+                    vehicules: cells[6].textContent
+                };
+            });
+
+            const headers = ['Date', 'Dépôt', 'Chantier', 'Stock Début', 'Stock Fin', 'Sortie Gasoil', 'Total Livré', 'Nb Véhicules', 'Chauffeurs', 'Matricules'];
+            
+            let csvContent = headers.join(',') + '\n';
+            
+            reports.forEach(report => {
+                const chauffeurs = report.vehicules ? report.vehicules.map(v => v.chauffeur || '').join(';') : '';
+                const matricules = report.vehicules ? report.vehicules.map(v => v.matricule || '').join(';') : '';
+                
+                const row = [
+                    report.date || '',
+                    report.depot || '',
+                    report.chantier || '',
+                    report.stockDebut || '',
+                    report.stockFin || '',
+                    report.sortieGasoil || '',
+                    report.total || '',
+                    report.vehicules ? report.vehicules.length : 0,
+                    `"${chauffeurs}"`,
+                    `"${matricules}"`
+                ];
+                
+                csvContent += row.join(',') + '\n';
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ETER_Export_Complet_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            eterAdmin.showNotification('📊 Export CSV téléchargé', 'success');
+        }
+
+        // Initialisation
+        let eterAdmin;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            eterAdmin = new ETERAdmin();
+            
+            // Fermer modal en cliquant à l'extérieur
+            document.getElementById('detailModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeDetailModal();
+                }
+            });
+
+            const pdfBtn = document.getElementById('downloadPdfBtn');
+            if (pdfBtn) {
+                pdfBtn.onclick = function() {
+                    if (currentReportId) {
+                        window.open(`/api/forms/${currentReportId}/pdf`, '_blank');
+                    } else {
+                        alert('Aucun rapport sélectionné.');
+                    }
+                };
+            }
+        });
+    </script>
+</body>
+</html>

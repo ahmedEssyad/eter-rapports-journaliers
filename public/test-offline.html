@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang=\"fr\">
+<head>
+    <meta charset=\"UTF-8\">
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=no\">
+    <title>ETER PWA - Test Offline</title>
+    <link rel=\"stylesheet\" href=\"/css/global.css\">
+    <link rel=\"stylesheet\" href=\"/css/pwa-offline.css\">
+    <link rel=\"manifest\" href=\"/manifest.json\">
+    <meta name=\"theme-color\" content=\"#667eea\">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        
+        .test-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            margin: -20px -20px 20px -20px;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .status-card {
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid;
+        }
+        
+        .status-online {
+            background: rgba(40, 167, 69, 0.1);
+            border-color: #28a745;
+            color: #28a745;
+        }
+        
+        .status-offline {
+            background: rgba(220, 53, 69, 0.1);
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .test-btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .test-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        
+        .log-info { background: rgba(23, 162, 184, 0.1); }
+        .log-success { background: rgba(40, 167, 69, 0.1); }
+        .log-warning { background: rgba(255, 193, 7, 0.1); }
+        .log-error { background: rgba(220, 53, 69, 0.1); }
+    </style>
+</head>
+<body>
+    <!-- 🌐 Indicateur de statut réseau -->
+    <div id=\"networkStatus\" class=\"network-status\">
+        <i class=\"fas fa-wifi\"></i> Vérification...
+    </div>
+
+    <!-- 🔄 Bouton de synchronisation -->
+    <button id=\"syncButton\" class=\"sync-button\" style=\"display: none;\">
+        <i class=\"fas fa-sync\"></i> Synchroniser
+        <span id=\"pendingFormsCount\" class=\"pending-count-badge\" style=\"display: none;\">0</span>
+    </button>
+
+    <div class=\"test-container\">
+        <h1>🚀 ETER PWA - Test Mode Offline</h1>
+        <p>Cette page permet de tester les fonctionnalités hors ligne de l'application ETER.</p>
+
+        <!-- Status Section -->
+        <div class=\"test-section\">
+            <div class=\"test-header\">
+                <h2>📊 État du Système</h2>
+            </div>
+            
+            <div class=\"status-grid\">
+                <div id=\"connectionStatus\" class=\"status-card\">
+                    <h3>🌐 Connexion</h3>
+                    <p id=\"connectionText\">Vérification...</p>
+                </div>
+                
+                <div id=\"swStatus\" class=\"status-card\">
+                    <h3>⚙️ Service Worker</h3>
+                    <p id=\"swText\">Vérification...</p>
+                </div>
+                
+                <div id=\"dbStatus\" class=\"status-card\">
+                    <h3>💾 Base Locale</h3>
+                    <p id=\"dbText\">Vérification...</p>
+                </div>
+                
+                <div id=\"cacheStatus\" class=\"status-card\">
+                    <h3>📦 Cache</h3>
+                    <p id=\"cacheText\">Vérification...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests Section -->
+        <div class=\"test-section\">
+            <div class=\"test-header\">
+                <h2>🧪 Tests Fonctionnels</h2>
+            </div>
+            
+            <div class=\"test-buttons\">
+                <button class=\"test-btn\" onclick=\"testOfflineForm()\">📋 Test Formulaire Offline</button>
+                <button class=\"test-btn\" onclick=\"testSyncProcess()\">🔄 Test Synchronisation</button>
+                <button class=\"test-btn\" onclick=\"testCacheStatus()\">📦 Vérifier Cache</button>
+                <button class=\"test-btn\" onclick=\"simulateOffline()\">📴 Simuler Hors Ligne</button>
+                <button class=\"test-btn\" onclick=\"clearAllData()\">🗑️ Effacer Données</button>
+                <button class=\"test-btn\" onclick=\"goToForm()\">🚀 Ouvrir Formulaire</button>
+            </div>
+        </div>
+
+        <!-- Pending Forms Section -->
+        <div class=\"test-section\">
+            <div class=\"test-header\">
+                <h2>📋 Formulaires en Attente</h2>
+            </div>
+            
+            <div id=\"pendingFormsInfo\">
+                <p>Chargement...</p>
+            </div>
+        </div>
+
+        <!-- Log Section -->
+        <div class=\"test-section\">
+            <div class=\"test-header\">
+                <h2>📝 Journal d'Activité</h2>
+            </div>
+            
+            <div class=\"test-buttons\" style=\"margin-bottom: 15px;\">
+                <button class=\"test-btn\" onclick=\"clearLog()\">🗑️ Effacer Journal</button>
+                <button class=\"test-btn\" onclick=\"exportLog()\">💾 Exporter Journal</button>
+            </div>
+            
+            <div id=\"logContainer\" class=\"log-container\">
+                <div class=\"log-entry log-info\">🚀 Test PWA ETER initialisé</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src=\"/js/offline-manager.js\"></script>
+    <script>
+        // 🔧 Variables globales
+        let testLog = [];
+        let offlineSimulated = false;
+
+        // 🚀 Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 Page de test chargée', 'info');
+            initializeTests();
+            startStatusUpdates();
+        });
+
+        // 📊 Initialisation des tests
+        async function initializeTests() {
+            // Attendre OfflineManager
+            let retries = 0;
+            while (!window.offlineManager && retries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+            
+            if (window.offlineManager) {
+                log('✅ OfflineManager détecté', 'success');
+                updatePendingFormsInfo();
+            } else {
+                log('❌ OfflineManager non disponible', 'error');
+            }
+            
+            updateAllStatus();
+        }
+
+        // 🔄 Mise à jour périodique du statut
+        function startStatusUpdates() {
+            updateAllStatus();
+            setInterval(updateAllStatus, 5000);
+        }
+
+        // 📊 Mise à jour de tous les statuts
+        async function updateAllStatus() {
+            updateConnectionStatus();
+            updateServiceWorkerStatus();
+            updateDatabaseStatus();
+            updateCacheStatus();
+            updatePendingFormsInfo();
+        }
+
+        // 🌐 Statut connexion
+        function updateConnectionStatus() {
+            const status = document.getElementById('connectionStatus');
+            const text = document.getElementById('connectionText');
+            
+            if (navigator.onLine && !offlineSimulated){
+                status.className = 'status-card status-online';
+                text.textContent = 'En ligne';
+            } else {
+                status.className = 'status-card status-offline';
+                text.textContent = offlineSimulated ? 'Simulé hors ligne' : 'Hors ligne';
+            }
+        }
+
+        // ⚙️ Statut Service Worker
+        async function updateServiceWorkerStatus() {
+            const status = document.getElementById('swStatus');
+            const text = document.getElementById('swText');
+            
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    status.className = 'status-card status-online';
+                    text.textContent = 'Actif';
+                } else {
+                    status.className = 'status-card status-offline';
+                    text.textContent = 'Non enregistré';
+                }
+            } else {
+                status.className = 'status-card status-offline';
+                text.textContent = 'Non supporté';
+            }
+        }
+
+        // 💾 Statut base de données
+        function updateDatabaseStatus() {
+            const status = document.getElementById('dbStatus');
+            const text = document.getElementById('dbText');
+            
+            if (window.offlineManager && window.offlineManager.db) {
+                status.className = 'status-card status-online';
+                text.textContent = 'Connectée';
+            } else {
+                status.className = 'status-card status-offline';
+                text.textContent = 'Non disponible';
+            }
+        }
+
+        // 📦 Statut cache
+        async function updateCacheStatus() {
+            const status = document.getElementById('cacheStatus');
+            const text = document.getElementById('cacheText');
+            
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    const eterCaches = cacheNames.filter(name => name.includes('eter'));
+                    
+                    if (eterCaches.length > 0) {
+                        status.className = 'status-card status-online';
+                        text.textContent = `${eterCaches.length} cache(s)`;
+                    } else {
+                        status.className = 'status-card status-offline';
+                        text.textContent = 'Vide';
+                    }
+                } catch (error) {
+                    status.className = 'status-card status-offline';
+                    text.textContent = 'Erreur';
+                }
+            } else {
+                status.className = 'status-card status-offline';
+                text.textContent = 'Non supporté';
+            }
+        }
+
+        // 📋 Mise à jour info formulaires en attente
+        function updatePendingFormsInfo() {
+            const container = document.getElementById('pendingFormsInfo');
+            
+            if (window.offlineManager) {
+                const stats = window.offlineManager.getOfflineStats();
+                
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                        <div><strong>Total:</strong> ${stats.totalPending}</div>
+                        <div><strong>En ligne:</strong> ${stats.isOnline ? 'Oui' : 'Non'}</div>
+                        <div><strong>Sync en cours:</strong> ${stats.syncInProgress ? 'Oui' : 'Non'}</div>
+                        <div><strong>DB connectée:</strong> ${stats.dbConnected ? 'Oui' : 'Non'}</div>
+                    </div>
+                    
+                    ${stats.totalPending > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <h4>📋 Formulaires en attente:</h4>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                ${stats.pendingForms.map(form => `
+                                    <li>
+                                        <strong>ID:</strong> ${form.id.slice(-8)} - 
+                                        <strong>Statut:</strong> ${form.status} - 
+                                        <strong>Date:</strong> ${new Date(form.timestamp).toLocaleString('fr-FR')}
+                                        ${form.retryCount > 0 ? ` (${form.retryCount} tentatives)` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : '<p style="margin-top: 15px; color: #28a745;">✅ Aucun formulaire en attente</p>'}
+                `;
+            } else {
+                container.innerHTML = '<p style="color: #dc3545;">❌ OfflineManager non disponible</p>';
+            }
+        }
+
+        // 🧪 Tests fonctionnels
+        async function testOfflineForm() {
+            log('🧪 Test formulaire offline...', 'info');
+            
+            if (!window.offlineManager) {
+                log('❌ OfflineManager non disponible', 'error');
+                return;
+            }
+            
+            const testFormData = {
+                entree: 'TEST',
+                origine: 'Test Origine',
+                depot: 'Dépôt Test',
+                chantier: 'Chantier Test',
+                date: new Date().toISOString().split('T')[0],
+                stockDebut: 1000,
+                stockFin: 800,
+                sortieGasoil: 200,
+                debutIndex: 12345,
+                finIndex: 12500,
+                vehicles: [
+                    {
+                        matricule: 'TEST-001',
+                        chauffeur: 'Chauffeur Test',
+                        heureRevif: '08:00',
+                        quantiteLivree: 100,
+                        lieuComptage: 'Zone A'
+                    }
+                ],
+                signatureResponsable: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                signatureChef: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                const formId = await window.offlineManager.saveFormOffline(testFormData);
+                log(`✅ Formulaire test sauvé: ${formId}`, 'success');
+                updatePendingFormsInfo();
+            } catch (error) {
+                log(`❌ Erreur test formulaire: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSyncProcess() {
+            log('🔄 Test synchronisation...', 'info');
+            
+            if (!window.offlineManager) {
+                log('❌ OfflineManager non disponible', 'error');
+                return;
+            }
+            
+            if (!navigator.onLine) {
+                log('⚠️ Mode hors ligne - Synchronisation impossible', 'warning');
+                return;
+            }
+            
+            try {
+                await window.offlineManager.syncPendingForms();
+                log('✅ Synchronisation terminée', 'success');
+                updatePendingFormsInfo();
+            } catch (error) {
+                log(`❌ Erreur synchronisation: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCacheStatus() {
+            log('📦 Vérification cache...', 'info');
+            
+            if (!('caches' in window)) {
+                log('❌ Cache API non supportée', 'error');
+                return;
+            }
+            
+            try {
+                const cacheNames = await caches.keys();
+                log(`📦 ${cacheNames.length} cache(s) trouvé(s): ${cacheNames.join(', ')}`, 'info');
+                
+                for (const cacheName of cacheNames) {
+                    const cache = await caches.open(cacheName);
+                    const keys = await cache.keys();
+                    log(`  └─ ${cacheName}: ${keys.length} ressources`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Erreur vérification cache: ${error.message}`, 'error');
+            }
+        }
+
+        function simulateOffline() {
+            offlineSimulated = !offlineSimulated;
+            
+            if (offlineSimulated) {
+                // Simuler mode offline
+                Object.defineProperty(navigator, 'onLine', {
+                    writable: true,
+                    value: false
+                });
+                window.dispatchEvent(new Event('offline'));
+                log('📴 Mode hors ligne simulé activé', 'warning');
+            } else {
+                // Restaurer mode online
+                Object.defineProperty(navigator, 'onLine', {
+                    writable: true,
+                    value: true
+                });
+                window.dispatchEvent(new Event('online'));
+                log('🌐 Mode en ligne restauré', 'success');
+            }
+            
+            updateConnectionStatus();
+        }
+
+        async function clearAllData() {
+            if (!confirm('⚠️ Supprimer toutes les données locales (cache, formulaires, etc.) ?')) {
+                return;
+            }
+            
+            log('🗑️ Suppression données locales...', 'info');
+            
+            try {
+                // Vider caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    log('✅ Caches supprimés', 'success');
+                }
+                
+                // Vider IndexedDB
+                if (window.offlineManager && window.offlineManager.db) {
+                    const stores = ['pendingForms', 'signatures', 'userCache'];
+                    for (const store of stores) {
+                        try {
+                            const transaction = window.offlineManager.db.transaction([store], 'readwrite');
+                            const objectStore = transaction.objectStore(store);
+                            await objectStore.clear();
+                        } catch (error) {
+                            // Store peut ne pas exister
+                        }
+                    }
+                    log('✅ Base de données locale vidée', 'success');
+                }
+                
+                // Actualiser l'affichage
+                setTimeout(() => {
+                    updateAllStatus();
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ Erreur suppression: ${error.message}`, 'error');
+            }
+        }
+
+        function goToForm() {
+            log('🚀 Redirection vers formulaire...', 'info');
+            window.location.href = '/eter-form.html';
+        }
+
+        // 📝 Fonctions de journal
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('fr-FR');
+            const entry = { timestamp, message, type };
+            testLog.push(entry);
+            
+            const container = document.getElementById('logContainer');
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-entry log-${type}`;
+            logDiv.textContent = `[${timestamp}] ${message}`;
+            
+            container.appendChild(logDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Garder seulement les 100 dernières entrées
+            if (testLog.length > 100) {
+                testLog = testLog.slice(-100);
+                const entries = container.children;
+                if (entries.length > 100) {
+                    container.removeChild(entries[0]);
+                }
+            }
+        }
+
+        function clearLog() {
+            testLog = [];
+            document.getElementById('logContainer').innerHTML = '';
+            log('📝 Journal effacé', 'info');
+        }
+
+        function exportLog() {
+            const logText = testLog.map(entry => 
+                `[${entry.timestamp}] ${entry.type.toUpperCase()}: ${entry.message}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `eter-test-log-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+            log('💾 Journal exporté', 'success');
+        }
+
+        // 🔧 Enregistrement Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        log('✅ Service Worker enregistré', 'success');
+                    })
+                    .catch(error => {
+                        log(`❌ Erreur Service Worker: ${error.message}`, 'error');
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
