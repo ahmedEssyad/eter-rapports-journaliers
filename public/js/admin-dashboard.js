@@ -605,6 +605,206 @@ class AdminDashboard {
         this.showToast('Fonctionnalité de sauvegarde en cours de développement', 'info');
     }
     
+    // === FONCTIONNALITÉS D'EXPORT JOURNALIER ===
+    showDailyExport() {
+        const modal = document.getElementById('dailyExportModal');
+        const dateInput = document.getElementById('dailyExportDate');
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Définir la date par défaut sur aujourd'hui
+        dateInput.value = today;
+        
+        // Réinitialiser l'interface
+        this.resetDailyExportModal();
+        
+        // Afficher le modal
+        modal.style.display = 'block';
+        
+        // Événement pour détecter le changement de date
+        dateInput.addEventListener('change', () => {
+            this.previewDailyReports();
+        });
+        
+        // Prévisualiser automatiquement la date d'aujourd'hui
+        this.previewDailyReports();
+    }
+    
+    closeDailyExportModal() {
+        const modal = document.getElementById('dailyExportModal');
+        modal.style.display = 'none';
+        this.resetDailyExportModal();
+    }
+    
+    resetDailyExportModal() {
+        const info = document.getElementById('dailyExportInfo');
+        const exportBtn = document.getElementById('exportBtn');
+        
+        info.className = 'export-info';
+        info.innerHTML = '<p>Sélectionnez une date pour voir les rapports disponibles.</p>';
+        exportBtn.disabled = true;
+        
+        // Supprimer les aperçus précédents
+        const existingPreview = document.querySelector('.report-preview');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+    }
+    
+    async previewDailyReports() {
+        const dateInput = document.getElementById('dailyExportDate');
+        const selectedDate = dateInput.value;
+        
+        if (!selectedDate) {
+            this.resetDailyExportModal();
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch('/api/admin/reports', {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des rapports');
+            }
+            
+            const data = await response.json();
+            
+            // Filtrer les rapports par date
+            const targetDate = new Date(selectedDate);
+            const dailyReports = data.reports.filter(report => {
+                const reportDate = new Date(report.date);
+                return reportDate.toDateString() === targetDate.toDateString();
+            });
+            
+            this.displayDailyReportsPreview(dailyReports, selectedDate);
+            
+        } catch (error) {
+            console.error('Erreur preview:', error);
+            this.showToast('Erreur lors de la prévisualisation', 'error');
+        }
+    }
+    
+    displayDailyReportsPreview(reports, date) {
+        const info = document.getElementById('dailyExportInfo');
+        const exportBtn = document.getElementById('exportBtn');
+        const formattedDate = new Date(date).toLocaleDateString('fr-FR');
+        
+        // Supprimer l'ancien aperçu
+        const existingPreview = document.querySelector('.report-preview');
+        if (existingPreview) {
+            existingPreview.remove();
+        }
+        
+        if (reports.length === 0) {
+            info.className = 'export-info no-reports';
+            info.innerHTML = `
+                <p class="no-report-message">
+                    Aucun rapport trouvé pour le ${formattedDate}
+                </p>
+            `;
+            exportBtn.disabled = true;
+            return;
+        }
+        
+        // Calculer les statistiques
+        const totalFuel = reports.reduce((sum, report) => sum + (report.sortieGasoil || 0), 0);
+        const totalVehicles = reports.reduce((sum, report) => sum + (report.vehicles?.length || 0), 0);
+        const depots = [...new Set(reports.map(r => r.depot))].filter(Boolean);
+        
+        info.className = 'export-info has-reports';
+        info.innerHTML = `
+            <p>
+                <span class="report-count">${reports.length} rapport(s)</span> 
+                trouvé(s) pour le ${formattedDate}
+            </p>
+            <p>• ${totalFuel.toFixed(1)} L de carburant distribué</p>
+            <p>• ${totalVehicles} véhicule(s) servi(s)</p>
+            <p>• ${depots.length} dépôt(s) concerné(s)</p>
+        `;
+        
+        // Créer l'aperçu détaillé
+        const preview = document.createElement('div');
+        preview.className = 'report-preview';
+        
+        reports.forEach(report => {
+            const item = document.createElement('div');
+            item.className = 'report-preview-item';
+            
+            const time = new Date(report.submittedAt).toLocaleTimeString('fr-FR', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            item.innerHTML = `
+                <div class="report-preview-time">${time}</div>
+                <div class="report-preview-info">
+                    <div class="report-preview-depot">${report.depot || 'N/A'}</div>
+                    <div class="report-preview-details">
+                        ${report.chantier || 'N/A'} • ${report.vehicles?.length || 0} véhicule(s) • ${(report.sortieGasoil || 0).toFixed(1)} L
+                    </div>
+                </div>
+            `;
+            
+            preview.appendChild(item);
+        });
+        
+        info.appendChild(preview);
+        exportBtn.disabled = false;
+    }
+    
+    async exportDailyReports() {
+        const dateInput = document.getElementById('dailyExportDate');
+        const selectedDate = dateInput.value;
+        
+        if (!selectedDate) {
+            this.showToast('Veuillez sélectionner une date', 'warning');
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('adminToken');
+            const response = await fetch('/api/admin/reports/export/daily', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ date: selectedDate })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erreur lors de l\'export');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const formattedDate = new Date(selectedDate).toLocaleDateString('fr-FR').replace(/\//g, '-');
+            a.download = `Rapports_Journaliers_${formattedDate}.pdf`;
+            
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            this.showToast('Export journalier réussi', 'success');
+            this.closeDailyExportModal();
+            
+        } catch (error) {
+            console.error('Erreur export journalier:', error);
+            this.showToast(error.message || 'Erreur lors de l\'export journalier', 'error');
+        }
+    }
+    
     saveSettings() {
         this.showToast('Paramètres sauvegardés', 'success');
     }
@@ -677,6 +877,30 @@ document.addEventListener('DOMContentLoaded', () => {
 function showSection(section) {
     if (window.dashboard) {
         window.dashboard.showSection(section);
+    }
+}
+
+function showDailyExport() {
+    if (window.dashboard) {
+        window.dashboard.showDailyExport();
+    }
+}
+
+function closeDailyExportModal() {
+    if (window.dashboard) {
+        window.dashboard.closeDailyExportModal();
+    }
+}
+
+function previewDailyReports() {
+    if (window.dashboard) {
+        window.dashboard.previewDailyReports();
+    }
+}
+
+function exportDailyReports() {
+    if (window.dashboard) {
+        window.dashboard.exportDailyReports();
     }
 }
 

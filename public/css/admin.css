@@ -445,6 +445,98 @@ body {
     color: var(--danger-color);
 }
 
+/* Daily Export Modal */
+.daily-export-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.export-info {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+}
+
+.export-info p {
+    margin: 0;
+    color: var(--secondary-color);
+}
+
+.export-info.has-reports {
+    background: #f0f9ff;
+    border-left-color: var(--success-color);
+}
+
+.export-info.has-reports .report-count {
+    font-weight: 600;
+    color: var(--success-color);
+}
+
+.export-info.no-reports {
+    background: #fef2f2;
+    border-left-color: var(--warning-color);
+}
+
+.export-info.no-reports .no-report-message {
+    color: var(--warning-color);
+    font-weight: 500;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.form-actions .btn {
+    min-width: 120px;
+}
+
+.report-preview {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.report-preview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #f8fafc;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--primary-color);
+}
+
+.report-preview-item:hover {
+    background: #f1f5f9;
+}
+
+.report-preview-time {
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+}
+
+.report-preview-info {
+    flex: 1;
+    margin-left: 1rem;
+}
+
+.report-preview-depot {
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.report-preview-details {
+    font-size: 0.875rem;
+    color: var(--secondary-color);
+    margin-top: 0.25rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .admin-header {

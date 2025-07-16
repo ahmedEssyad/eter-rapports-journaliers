@@ -983,6 +983,148 @@ app.post('/api/admin/reports/export/selected', authenticateToken, async (req, re
     }
 });
 
+// Route pour exporter tous les rapports d'une date spécifique en PDF
+app.post('/api/admin/reports/export/daily', authenticateToken, async (req, res) => {
+    try {
+        const { date } = req.body;
+        
+        if (!date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Date requise'
+            });
+        }
+
+        // Créer les bornes de la journée
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        let forms = [];
+
+        if (isMongoConnected) {
+            forms = await Form.find({
+                date: {
+                    $gte: startOfDay,
+                    $lt: endOfDay
+                }
+            }).sort({ submittedAt: 1 });
+        } else {
+            forms = tempStorage.filter(form => {
+                const formDate = new Date(form.date);
+                return formDate >= startOfDay && formDate < endOfDay;
+            }).sort((a, b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+        }
+
+        if (forms.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Aucun rapport trouvé pour cette date'
+            });
+        }
+
+        const doc = new PDFDocument({ size: 'A4', margin: 20 });
+        const formattedDate = new Date(date).toLocaleDateString('fr-FR');
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="Rapports_Journaliers_${formattedDate.replace(/\//g, '-')}.pdf"`);
+        doc.pipe(res);
+
+        // Page de garde avec résumé journalier
+        generateDailySummaryPage(doc, forms, formattedDate);
+        
+        // Ajouter chaque rapport sur une nouvelle page
+        forms.forEach((form, index) => {
+            doc.addPage();
+            generateSingleReportPDF(doc, form);
+        });
+
+        doc.end();
+
+    } catch (error) {
+        console.error('Erreur export daily:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de l\'export journalier'
+        });
+    }
+});
+
+// Fonction pour générer la page de résumé journalier
+function generateDailySummaryPage(doc, forms, date) {
+    // En-tête
+    doc.rect(20, 20, 555, 750).stroke();
+    doc.rect(20, 20, 555, 60).stroke();
+    doc.fontSize(12).font('Helvetica-Bold').text("Etablissement des Travaux d'Entretien Routier -ETER-", 30, 35, { align: 'center', width: 535 });
+    doc.fontSize(10).font('Helvetica-Oblique').text("Direction des Approvisionnements et Logistique -DAL-", 30, 50, { align: 'center', width: 535 });
+    
+    // Titre
+    doc.rect(20, 80, 555, 40).stroke();
+    doc.fontSize(16).font('Helvetica-Bold').text(`Résumé Journalier - ${date}`, 30, 95, { align: 'center', width: 535 });
+    
+    // Statistiques générales
+    let yPos = 140;
+    doc.fontSize(12).font('Helvetica-Bold').text('Statistiques Générales', 30, yPos);
+    yPos += 25;
+    
+    const totalReports = forms.length;
+    const totalCarburant = forms.reduce((sum, form) => sum + (form.sortieGasoil || 0), 0);
+    const totalVehicules = forms.reduce((sum, form) => sum + (form.vehicles?.length || 0), 0);
+    const depots = [...new Set(forms.map(form => form.depot))].filter(Boolean);
+    const chantiers = [...new Set(forms.map(form => form.chantier))].filter(Boolean);
+    
+    doc.fontSize(10).font('Helvetica')
+        .text(`• Nombre total de rapports: ${totalReports}`, 40, yPos)
+        .text(`• Total carburant distribué: ${totalCarburant.toFixed(2)} L`, 40, yPos + 15)
+        .text(`• Total véhicules servis: ${totalVehicules}`, 40, yPos + 30)
+        .text(`• Nombre de dépôts: ${depots.length}`, 40, yPos + 45)
+        .text(`• Nombre de chantiers: ${chantiers.length}`, 40, yPos + 60);
+    
+    yPos += 90;
+    
+    // Liste des rapports
+    doc.fontSize(12).font('Helvetica-Bold').text('Liste des Rapports', 30, yPos);
+    yPos += 25;
+    
+    // En-tête du tableau
+    doc.rect(30, yPos, 520, 20).stroke();
+    doc.fontSize(9).font('Helvetica-Bold')
+        .text('Heure', 35, yPos + 5)
+        .text('Dépôt', 90, yPos + 5)
+        .text('Chantier', 170, yPos + 5)
+        .text('Véhicules', 270, yPos + 5)
+        .text('Carburant (L)', 350, yPos + 5)
+        .text('Responsable', 430, yPos + 5);
+    
+    yPos += 20;
+    
+    // Lignes du tableau
+    forms.forEach((form, index) => {
+        if (yPos > 680) { // Nouvelle page si nécessaire
+            doc.addPage();
+            yPos = 50;
+        }
+        
+        doc.rect(30, yPos, 520, 20).stroke();
+        const heure = new Date(form.submittedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        
+        doc.fontSize(8).font('Helvetica')
+            .text(heure, 35, yPos + 5)
+            .text(form.depot || '-', 90, yPos + 5)
+            .text(form.chantier || '-', 170, yPos + 5)
+            .text(form.vehicles?.length || '0', 270, yPos + 5)
+            .text((form.sortieGasoil || 0).toFixed(2), 350, yPos + 5)
+            .text(form.signatureResponsable ? '✓' : '✗', 430, yPos + 5);
+        
+        yPos += 20;
+    });
+    
+    // Pied de page
+    doc.fontSize(8).font('Helvetica-Oblique')
+        .text(`Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 
+              30, 750, { align: 'center', width: 535 });
+}
+
 // Fonction utilitaire pour générer un rapport PDF
 function generateSingleReportPDF(doc, form) {
     // === EN-TÊTE EXACT COMME L'ORIGINAL ===
