@@ -42,25 +42,25 @@
                         <div class="col-md-6 col-lg-3">
                             <div class="form-group">
                                 <label for="entree" class="form-label">Entrée</label>
-                                <input type="text" id="entree" name="entree" class="form-control" required>
+                                <input type="text" id="entree" name="entree" class="form-control" placeholder="Ex: Entrée A" required>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <div class="form-group">
                                 <label for="origine" class="form-label">Origine</label>
-                                <input type="text" id="origine" name="origine" class="form-control" required>
+                                <input type="text" id="origine" name="origine" class="form-control" placeholder="Ex: Dépôt Central" required>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <div class="form-group">
                                 <label for="depot" class="form-label">Dépôt</label>
-                                <input type="text" id="depot" name="depot" class="form-control" required>
+                                <input type="text" id="depot" name="depot" class="form-control" placeholder="Ex: Dépôt Nord" required>
                             </div>
                         </div>
                         <div class="col-md-6 col-lg-3">
                             <div class="form-group">
                                 <label for="chantier" class="form-label">Chantier</label>
-                                <input type="text" id="chantier" name="chantier" class="form-control" required>
+                                <input type="text" id="chantier" name="chantier" class="form-control" placeholder="Ex: Chantier Route 123" required>
                             </div>
                         </div>
                     </div>
@@ -75,31 +75,31 @@
                         <div class="col-md-4 col-lg-2">
                             <div class="form-group">
                                 <label for="stockDebut" class="form-label">Stock Début</label>
-                                <input type="number" id="stockDebut" name="stockDebut" class="form-control" required>
+                                <input type="number" id="stockDebut" name="stockDebut" class="form-control" placeholder="Litres" min="0" step="0.01" required>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-2">
                             <div class="form-group">
                                 <label for="stockFin" class="form-label">Stock Fin</label>
-                                <input type="number" id="stockFin" name="stockFin" class="form-control" required>
+                                <input type="number" id="stockFin" name="stockFin" class="form-control" placeholder="Litres" min="0" step="0.01" required>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-2">
                             <div class="form-group">
                                 <label for="sortieGasoil" class="form-label">Sortie Gasoil</label>
-                                <input type="number" id="sortieGasoil" name="sortieGasoil" class="form-control" required>
+                                <input type="number" id="sortieGasoil" name="sortieGasoil" class="form-control" placeholder="Litres" min="0" step="0.01" required>
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-2">
                             <div class="form-group">
                                 <label for="debutIndex" class="form-label">Début Index</label>
-                                <input type="number" id="debutIndex" name="debutIndex" class="form-control">
+                                <input type="number" id="debutIndex" name="debutIndex" class="form-control" placeholder="Index compteur" min="0" step="1">
                             </div>
                         </div>
                         <div class="col-md-4 col-lg-2">
                             <div class="form-group">
                                 <label for="finIndex" class="form-label">Fin Index</label>
-                                <input type="number" id="finIndex" name="finIndex" class="form-control">
+                                <input type="number" id="finIndex" name="finIndex" class="form-control" placeholder="Index compteur" min="0" step="1">
                             </div>
                         </div>
                     </div>
@@ -127,7 +127,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <button type="button" class="btn btn-warning mt-3" id="addVehicleRow">
+                    <button type="button" class="btn btn-warning mt-3 btn-pulse" id="addVehicleRow">
                         <i class="fas fa-plus"></i> Ajouter un véhicule
                     </button>
                 </div>
@@ -156,7 +156,7 @@
 
             <!-- Form Actions -->
             <div class="text-center mt-4">
-                <button type="button" class="btn btn-primary me-2" id="saveForm">
+                <button type="button" class="btn btn-primary me-2 btn-pulse" id="saveForm">
                     <i class="fas fa-save"></i> Enregistrer
                 </button>
                 <button type="button" class="btn btn-danger" id="resetForm">
