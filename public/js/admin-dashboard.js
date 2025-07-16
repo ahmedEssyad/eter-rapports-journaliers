@@ -726,6 +726,7 @@ class AdminDashboard {
             <p>• ${totalFuel.toFixed(1)} L de carburant distribué</p>
             <p>• ${totalVehicles} véhicule(s) servi(s)</p>
             <p>• ${depots.length} dépôt(s) concerné(s)</p>
+            <p><strong>📋 Tous les rapports seront regroupés sur une seule page avec numérotation continue</strong></p>
         `;
         
         // Créer l'aperçu détaillé

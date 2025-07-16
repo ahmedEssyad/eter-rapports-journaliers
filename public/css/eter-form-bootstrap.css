@@ -242,6 +242,26 @@ body {
   box-shadow: var(--eter-shadow-sm);
 }
 
+.signature-btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--eter-border-radius);
+  transition: var(--eter-transition);
+}
+
+.signature-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--eter-shadow-md);
+}
+
+.driver-signature-preview {
+  margin-top: 0.25rem;
+}
+
+.driver-signature-preview small {
+  font-weight: 600;
+}
+
 .vehicle-table {
   margin-bottom: 0;
   background: var(--eter-bg-primary);

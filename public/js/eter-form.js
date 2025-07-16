@@ -205,28 +205,58 @@ class ETERForm {
         }
 
         const signatureData = this.canvas.toDataURL('image/png');
-        const signatureBox = document.getElementById(`signature${this.currentSignatureType.charAt(0).toUpperCase() + this.currentSignatureType.slice(1)}`);
-        const img = signatureBox.querySelector('img');
         
-        if (this.currentSignatureType === 'responsable') {
-            this.signatureResponsable = signatureData;
+        if (this.currentSignatureType === 'driver') {
+            // Save driver signature
+            if (!this.driverSignatures) {
+                this.driverSignatures = {};
+            }
+            this.driverSignatures[this.currentDriverSignatureIndex] = signatureData;
+            
+            // Update UI
+            const signatureBtn = document.querySelector(`#vehicleTableBody tr:nth-child(${this.currentDriverSignatureIndex + 1}) .signature-btn`);
+            const signaturePreview = document.getElementById(`driverSignature_${this.currentDriverSignatureIndex}`);
+            
+            if (signatureBtn && signaturePreview) {
+                signatureBtn.style.display = 'none';
+                signaturePreview.style.display = 'block';
+            }
+            
+            document.getElementById('signatureModal').style.display = 'none';
         } else {
-            this.signatureChef = signatureData;
+            // Save responsable or chef signature
+            const signatureBox = document.getElementById(`signature${this.currentSignatureType.charAt(0).toUpperCase() + this.currentSignatureType.slice(1)}`);
+            const img = signatureBox.querySelector('img');
+            
+            if (this.currentSignatureType === 'responsable') {
+                this.signatureResponsable = signatureData;
+            } else {
+                this.signatureChef = signatureData;
+            }
+            
+            img.src = signatureData;
+            img.style.display = 'block';
+            signatureBox.classList.add('has-signature');
+            
+            document.getElementById('signatureModal').style.display = 'none';
         }
-        
-        img.src = signatureData;
-        img.style.display = 'block';
-        signatureBox.classList.add('has-signature');
-        
-        document.getElementById('signatureModal').style.display = 'none';
     }
 
     addVehicleRow() {
         const tbody = document.getElementById('vehicleTableBody');
         const row = document.createElement('tr');
+        const rowIndex = tbody.children.length;
         row.innerHTML = `
             <td><input type="text" name="matricule[]" class="form-control" required></td>
             <td><input type="text" name="chauffeur[]" class="form-control" required></td>
+            <td>
+                <button type="button" class="btn btn-info btn-sm signature-btn" onclick="eterForm.openDriverSignatureModal(${rowIndex})">
+                    <i class="fas fa-signature"></i> Signer
+                </button>
+                <div class="driver-signature-preview" id="driverSignature_${rowIndex}" style="display: none;">
+                    <small class="text-success">✓ Signé</small>
+                </div>
+            </td>
             <td><input type="time" name="heureRevif[]" class="form-control"></td>
             <td><input type="number" name="quantiteLivree[]" class="form-control" step="0.01"></td>
             <td><input type="text" name="lieuComptage[]" class="form-control"></td>
@@ -243,6 +273,25 @@ class ETERForm {
         const row = button.closest('tr');
         row.remove();
     }
+
+    openDriverSignatureModal(rowIndex) {
+        this.currentDriverSignatureIndex = rowIndex;
+        this.currentSignatureType = 'driver';
+        
+        const modal = document.getElementById('signatureModal');
+        const modalTitle = document.getElementById('signatureModalLabel');
+        modalTitle.textContent = 'Signature du Chauffeur';
+        
+        modal.style.display = 'block';
+        
+        // Clear previous signature
+        const canvas = document.getElementById('signatureCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        this.setupSignatureCanvas();
+    }
+
 
     async saveForm() {
         try {
@@ -381,11 +430,12 @@ class ETERForm {
         const vehicles = [];
         const rows = document.querySelectorAll('#vehicleTableBody tr');
         
-        rows.forEach(row => {
+        rows.forEach((row, index) => {
             const inputs = row.querySelectorAll('input');
             vehicles.push({
                 matricule: inputs[0].value,
                 chauffeur: inputs[1].value,
+                signatureDriver: this.driverSignatures && this.driverSignatures[index] ? this.driverSignatures[index] : null,
                 heureRevif: inputs[2].value,
                 quantiteLivree: inputs[3].value,
                 lieuComptage: inputs[4].value
@@ -399,6 +449,7 @@ class ETERForm {
         this.form.reset();
         this.signatureResponsable = null;
         this.signatureChef = null;
+        this.driverSignatures = {};
         
         const responsableImg = document.querySelector('#signatureResponsable img');
         const chefImg = document.querySelector('#signatureChef img');

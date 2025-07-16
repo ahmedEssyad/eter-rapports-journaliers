@@ -420,9 +420,10 @@ app.post('/api/forms', async (req, res) => {
             sortieGasoil: Number(sortieGasoil),
             debutIndex: Number(debutIndex),
             finIndex: Number(finIndex),
-            vehicles: vehicles.map(v => ({
+            vehicles: vehicles.map((v, index) => ({
                 ...v,
-                quantiteLivree: Number(v.quantiteLivree)
+                quantiteLivree: Number(v.quantiteLivree),
+                signatureDriverUrl: v.signatureDriver ? saveSignatureFile(v.signatureDriver, `${id || generateUniqueId()}_driver_${index}`) : null
             })),
             signatureResponsable,
             signatureUrlResponsable,
@@ -1030,14 +1031,8 @@ app.post('/api/admin/reports/export/daily', authenticateToken, async (req, res) 
         res.setHeader('Content-Disposition', `attachment; filename="Rapports_Journaliers_${formattedDate.replace(/\//g, '-')}.pdf"`);
         doc.pipe(res);
 
-        // Page de garde avec résumé journalier
-        generateDailySummaryPage(doc, forms, formattedDate);
-        
-        // Ajouter chaque rapport sur une nouvelle page
-        forms.forEach((form, index) => {
-            doc.addPage();
-            generateSingleReportPDF(doc, form);
-        });
+        // Générer un rapport consolidé pour tous les formulaires du jour
+        generateConsolidatedDailyReport(doc, forms, formattedDate);
 
         doc.end();
 
@@ -1050,83 +1045,58 @@ app.post('/api/admin/reports/export/daily', authenticateToken, async (req, res) 
     }
 });
 
-// Fonction pour générer la page de résumé journalier
-function generateDailySummaryPage(doc, forms, date) {
-    // En-tête
-    doc.rect(20, 20, 555, 750).stroke();
-    doc.rect(20, 20, 555, 60).stroke();
-    doc.fontSize(12).font('Helvetica-Bold').text("Etablissement des Travaux d'Entretien Routier -ETER-", 30, 35, { align: 'center', width: 535 });
-    doc.fontSize(10).font('Helvetica-Oblique').text("Direction des Approvisionnements et Logistique -DAL-", 30, 50, { align: 'center', width: 535 });
+// Fonction pour générer un rapport consolidé journalier
+function generateConsolidatedDailyReport(doc, forms, date) {
+    // Collecter tous les véhicules de tous les formulaires
+    let allVehicles = [];
+    let entryNumber = 1;
     
-    // Titre
-    doc.rect(20, 80, 555, 40).stroke();
-    doc.fontSize(16).font('Helvetica-Bold').text(`Résumé Journalier - ${date}`, 30, 95, { align: 'center', width: 535 });
+    // Informations agrégées des formulaires
+    let aggregatedData = {
+        entree: forms[0]?.entree || '',
+        origine: forms[0]?.origine || '',
+        depot: forms[0]?.depot || '',
+        chantier: forms[0]?.chantier || '',
+        date: date,
+        stockDebut: forms.reduce((sum, form) => sum + (form.stockDebut || 0), 0),
+        stockFin: forms.reduce((sum, form) => sum + (form.stockFin || 0), 0),
+        sortieGasoil: forms.reduce((sum, form) => sum + (form.sortieGasoil || 0), 0),
+        debutIndex: forms[0]?.debutIndex || 0,
+        finIndex: forms[forms.length - 1]?.finIndex || 0,
+        // Signatures du dernier formulaire (ou du premier avec signatures)
+        signatureResponsable: forms.find(f => f.signatureResponsable)?.signatureResponsable,
+        signatureUrlResponsable: forms.find(f => f.signatureUrlResponsable)?.signatureUrlResponsable,
+        signatureChef: forms.find(f => f.signatureChef)?.signatureChef,
+        signatureUrlChef: forms.find(f => f.signatureUrlChef)?.signatureUrlChef
+    };
     
-    // Statistiques générales
-    let yPos = 140;
-    doc.fontSize(12).font('Helvetica-Bold').text('Statistiques Générales', 30, yPos);
-    yPos += 25;
-    
-    const totalReports = forms.length;
-    const totalCarburant = forms.reduce((sum, form) => sum + (form.sortieGasoil || 0), 0);
-    const totalVehicules = forms.reduce((sum, form) => sum + (form.vehicles?.length || 0), 0);
-    const depots = [...new Set(forms.map(form => form.depot))].filter(Boolean);
-    const chantiers = [...new Set(forms.map(form => form.chantier))].filter(Boolean);
-    
-    doc.fontSize(10).font('Helvetica')
-        .text(`• Nombre total de rapports: ${totalReports}`, 40, yPos)
-        .text(`• Total carburant distribué: ${totalCarburant.toFixed(2)} L`, 40, yPos + 15)
-        .text(`• Total véhicules servis: ${totalVehicules}`, 40, yPos + 30)
-        .text(`• Nombre de dépôts: ${depots.length}`, 40, yPos + 45)
-        .text(`• Nombre de chantiers: ${chantiers.length}`, 40, yPos + 60);
-    
-    yPos += 90;
-    
-    // Liste des rapports
-    doc.fontSize(12).font('Helvetica-Bold').text('Liste des Rapports', 30, yPos);
-    yPos += 25;
-    
-    // En-tête du tableau
-    doc.rect(30, yPos, 520, 20).stroke();
-    doc.fontSize(9).font('Helvetica-Bold')
-        .text('Heure', 35, yPos + 5)
-        .text('Dépôt', 90, yPos + 5)
-        .text('Chantier', 170, yPos + 5)
-        .text('Véhicules', 270, yPos + 5)
-        .text('Carburant (L)', 350, yPos + 5)
-        .text('Responsable', 430, yPos + 5);
-    
-    yPos += 20;
-    
-    // Lignes du tableau
-    forms.forEach((form, index) => {
-        if (yPos > 680) { // Nouvelle page si nécessaire
-            doc.addPage();
-            yPos = 50;
+    // Consolider tous les véhicules avec numérotation continue
+    forms.forEach(form => {
+        if (form.vehicles && form.vehicles.length > 0) {
+            form.vehicles.forEach(vehicle => {
+                allVehicles.push({
+                    numero: entryNumber++,
+                    matricule: vehicle.matricule || '',
+                    chauffeur: vehicle.chauffeur || '',
+                    signatureDriverUrl: vehicle.signatureDriverUrl || null,
+                    heureRevif: vehicle.heureRevif || '',
+                    quantiteLivree: vehicle.quantiteLivree || 0,
+                    lieuComptage: vehicle.lieuComptage || '',
+                    formTime: new Date(form.submittedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                });
+            });
         }
-        
-        doc.rect(30, yPos, 520, 20).stroke();
-        const heure = new Date(form.submittedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        
-        doc.fontSize(8).font('Helvetica')
-            .text(heure, 35, yPos + 5)
-            .text(form.depot || '-', 90, yPos + 5)
-            .text(form.chantier || '-', 170, yPos + 5)
-            .text(form.vehicles?.length || '0', 270, yPos + 5)
-            .text((form.sortieGasoil || 0).toFixed(2), 350, yPos + 5)
-            .text(form.signatureResponsable ? '✓' : '✗', 430, yPos + 5);
-        
-        yPos += 20;
     });
     
-    // Pied de page
-    doc.fontSize(8).font('Helvetica-Oblique')
-        .text(`Généré le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 
-              30, 750, { align: 'center', width: 535 });
+    // Générer le rapport avec tous les véhicules
+    generateSingleReportPDF(doc, {
+        ...aggregatedData,
+        vehicles: allVehicles
+    }, true); // true = mode consolidé
 }
 
 // Fonction utilitaire pour générer un rapport PDF
-function generateSingleReportPDF(doc, form) {
+function generateSingleReportPDF(doc, form, isConsolidated = false) {
     // === EN-TÊTE EXACT COMME L'ORIGINAL ===
     // Bordure principale
     doc.rect(20, 20, 555, 750).stroke();
@@ -1138,8 +1108,10 @@ function generateSingleReportPDF(doc, form) {
     
     // Titre du rapport avec numéro
     doc.rect(20, 80, 555, 30).stroke();
-    doc.fontSize(14).font('Helvetica-Bold').text(`Rapport Journalier`, 30, 90, { width: 400 });
-    doc.fontSize(10).text(`N° ${form.id}`, 450, 95);
+    doc.fontSize(14).font('Helvetica-Bold').text(`Rapport Journalier${isConsolidated ? ' - Consolidé' : ''}`, 30, 90, { width: 400 });
+    if (!isConsolidated && form.id) {
+        doc.fontSize(10).text(`N° ${form.id}`, 450, 95);
+    }
 
     // === SECTION INFORMATIONS GÉNÉRALES ===
     let currentY = 120;
@@ -1204,9 +1176,9 @@ function generateSingleReportPDF(doc, form) {
     
     currentY += 35;
 
-    // === TABLE DES VÉHICULES EXACTE ===
-    const colWidths = [70, 90, 60, 50, 70, 80, 80, 70];
-    const headers = ['Matricule', 'Nom Chauffeur', 'Signature', 'Heur de Revi', 'Qté Livrée', 'Lieu de Ravi', 'Compteur'];
+    // === TABLE DES VÉHICULES AVEC EXTENSION AUTOMATIQUE ===
+    const colWidths = [25, 70, 65, 55, 35, 50, 70, 75, 35];
+    const headers = ['N°', 'Matricule', 'Nom Chauffeur', 'Signature', 'Heure', 'Qté Livrée', 'Lieu de Comptage', 'Observation', 'Temps'];
     
     // En-têtes du tableau
     let x = 20;
@@ -1219,22 +1191,46 @@ function generateSingleReportPDF(doc, form) {
     
     currentY += 25;
     
-    // Lignes des véhicules
+    // Lignes des véhicules avec gestion automatique
     let totalQuantite = 0;
-    const maxRows = 15; // Nombre de lignes comme dans l'original
+    const vehicles = form.vehicles || [];
+    const minRows = 15; // Minimum de lignes à afficher
+    const maxRowsPerPage = 25; // Maximum de lignes par page
     
-    for (let i = 0; i < maxRows; i++) {
+    // Calculer le nombre total de lignes nécessaires
+    const totalRows = Math.max(minRows, vehicles.length);
+    
+    for (let i = 0; i < totalRows; i++) {
+        // Vérifier si on a besoin d'une nouvelle page
+        if (currentY > 650 && i < totalRows - 1) {
+            // Créer une nouvelle page et redessiner les en-têtes
+            doc.addPage();
+            currentY = 50;
+            
+            // Redessiner les en-têtes sur la nouvelle page
+            x = 20;
+            headers.forEach((header, j) => {
+                doc.rect(x, currentY, colWidths[j], 25).stroke();
+                doc.fontSize(8).font('Helvetica-Bold');
+                doc.text(header, x + 2, currentY + 8, { width: colWidths[j] - 4, align: 'center' });
+                x += colWidths[j];
+            });
+            currentY += 25;
+        }
+        
         x = 20;
-        const vehicle = form.vehicles && form.vehicles[i] ? form.vehicles[i] : {};
+        const vehicle = vehicles[i] || {};
         
         const rowData = [
+            vehicle.numero ? vehicle.numero.toString() : (i + 1).toString(), // Numérotation continue
             vehicle.matricule || '',
             vehicle.chauffeur || '',
-            '', // Signature (espace vide pour l'instant)
+            vehicle.signatureDriverUrl ? '✓' : '', // Signature (✓ si signée)
             vehicle.heureRevif || '',
             vehicle.quantiteLivree ? vehicle.quantiteLivree.toString() : '',
             vehicle.lieuComptage || '',
-            '', // Compteur (vide comme dans l'original)
+            '', // Observation (vide)
+            isConsolidated && vehicle.formTime ? vehicle.formTime : '', // Temps de soumission si consolidé
         ];
         
         if (vehicle.quantiteLivree) {
@@ -1251,6 +1247,28 @@ function generateSingleReportPDF(doc, form) {
         currentY += 20;
     }
     
+    // === SECTION RÉSUMÉ SI CONSOLIDÉ ===
+    if (isConsolidated) {
+        currentY += 20;
+        
+        // Ligne de séparation
+        doc.moveTo(20, currentY).lineTo(575, currentY).stroke();
+        currentY += 10;
+        
+        // Informations consolidées
+        doc.fontSize(9).font('Helvetica-Bold');
+        doc.text('RÉSUMÉ CONSOLIDÉ', 30, currentY);
+        currentY += 15;
+        
+        doc.fontSize(8).font('Helvetica');
+        doc.text(`Total véhicules servis: ${vehicles.length}`, 30, currentY);
+        doc.text(`Total carburant distribué: ${totalQuantite.toFixed(2)} L`, 200, currentY);
+        doc.text(`Stock début: ${form.stockDebut || 0} L`, 400, currentY);
+        doc.text(`Stock fin: ${form.stockFin || 0} L`, 500, currentY);
+        
+        currentY += 20;
+    }
+    
     // === SECTION SIGNATURES EN BAS ===
     currentY += 20;
     
@@ -1261,8 +1279,15 @@ function generateSingleReportPDF(doc, form) {
     // Zone signatures
     doc.fontSize(9).font('Helvetica');
     doc.text('Signature Pompiste', 30, currentY);
-    doc.text(`Total: ${totalQuantite}L`, 250, currentY);
+    doc.text(`Total: ${totalQuantite.toFixed(2)}L`, 250, currentY);
     doc.text('Signature Responsable', 450, currentY);
+    
+    if (isConsolidated) {
+        currentY += 15;
+        doc.fontSize(8).font('Helvetica-Oblique');
+        doc.text('Rapport consolidé généré automatiquement', 30, currentY);
+        doc.text(`le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 30, currentY + 10);
+    }
     
     currentY += 20;
     
