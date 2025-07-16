@@ -1,0 +1,238 @@
+% Template LaTeX pour le rapport de stage ETER
+\documentclass[12pt,a4paper]{report}
+
+% Packages essentiels
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+% Configuration de la page
+\geometry{
+    left=2.5cm,
+    right=2.5cm,
+    top=2.5cm,
+    bottom=2.5cm,
+    headheight=15pt
+}
+
+% Configuration des couleurs
+\definecolor{eterblue}{RGB}{26, 86, 219}
+\definecolor{etergray}{RGB}{108, 117, 125}
+\definecolor{codegreen}{RGB}{0, 128, 0}
+\definecolor{codegray}{RGB}{128, 128, 128}
+\definecolor{codepurple}{RGB}{128, 0, 128}
+\definecolor{backcolour}{RGB}{248, 249, 250}
+
+% Configuration des liens
+\hypersetup{
+    colorlinks=true,
+    linkcolor=eterblue,
+    filecolor=eterblue,
+    urlcolor=eterblue,
+    citecolor=eterblue,
+    pdftitle={Rapport de Stage S4 - ETER PWA},
+    pdfauthor={Votre Nom},
+    pdfsubject={Développement PWA pour rapports journaliers},
+    pdfkeywords={PWA, Node.js, MongoDB, Offline, ETER}
+}
+
+% Configuration des en-têtes et pieds de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{etergray}{\small Rapport de Stage S4}}
+\fancyhead[R]{\textcolor{etergray}{\small ETER - PWA}}
+\fancyfoot[C]{\textcolor{etergray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Configuration des titres
+\titleformat{\chapter}[display]
+{\normalfont\huge\bfseries\color{eterblue}}
+{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+
+\titleformat{\section}
+{\normalfont\Large\bfseries\color{eterblue}}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\normalfont\large\bfseries\color{eterblue}}
+{\thesubsection}{1em}{}
+
+\titleformat{\subsubsection}
+{\normalfont\normalsize\bfseries\color{eterblue}}
+{\thesubsubsection}{1em}{}
+
+% Configuration des listings de code
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{eterblue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    rulecolor=\color{etergray}
+}
+
+\lstset{style=codestyle}
+
+% Configuration des listes
+\setlist[itemize]{label=\textcolor{eterblue}{\textbullet}}
+\setlist[enumerate]{label=\textcolor{eterblue}{\arabic*.}}
+
+% Configuration de la table des matières
+\renewcommand{\cftchapfont}{\bfseries\color{eterblue}}
+\renewcommand{\cftsecfont}{\color{eterblue}}
+\renewcommand{\cftsubsecfont}{\color{etergray}}
+
+% Commandes personnalisées
+\newcommand{\tech}[1]{\textcolor{eterblue}{\textbf{#1}}}
+\newcommand{\code}[1]{\texttt{\textcolor{codepurple}{#1}}}
+\newcommand{\file}[1]{\texttt{\textcolor{codegreen}{#1}}}
+
+% Environnement pour les encadrés
+\usepackage{mdframed}
+\newmdenv[
+    backgroundcolor=backcolour,
+    linecolor=eterblue,
+    linewidth=2pt,
+    leftmargin=10pt,
+    rightmargin=10pt,
+    topline=true,
+    bottomline=true,
+    leftline=true,
+    rightline=true
+]{infobox}
+
+% Début du document
+\begin{document}
+
+% Page de titre
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    % Logo université (à remplacer par votre logo)
+    % \includegraphics[width=0.3\textwidth]{logo_universite.png}
+    
+    \vspace{1cm}
+    
+    {\huge\bfseries\color{eterblue} Rapport de Stage S4}
+    
+    \vspace{0.5cm}
+    
+    {\Large\bfseries Développement d'une Application PWA pour la Gestion des Rapports Journaliers ETER}
+    
+    \vspace{1.5cm}
+    
+    {\large\bfseries Digitalisation avec Approche Offline-First et Synchronisation Intelligente}
+    
+    \vspace{2cm}
+    
+    \begin{tabular}{rl}
+        \textbf{Étudiant :} & [Votre Nom] \\
+        \textbf{Filière :} & [Votre Filière] \\
+        \textbf{Semestre :} & S4 \\
+        \textbf{Année universitaire :} & [Année] \\
+        \textbf{Période de stage :} & [Dates] \\
+        \textbf{Encadrant académique :} & [Nom] \\
+        \textbf{Encadrant professionnel :} & [Nom] \\
+    \end{tabular}
+    
+    \vspace{2cm}
+    
+    {\large\bfseries Institution d'accueil}
+    
+    \vspace{0.5cm}
+    
+    {\Large\color{eterblue} ETER}
+    
+    {\large Établissement des Travaux d'Entretien Routier}
+    
+    {\normalsize Direction des Approvisionnements et Logistique}
+    
+    \vfill
+    
+    {\large \today}
+\end{titlepage}
+
+% Pages préliminaires
+\pagenumbering{roman}
+
+% Résumé
+\chapter*{Résumé}
+\addcontentsline{toc}{chapter}{Résumé}
+
+Ce rapport présente le développement d'une \tech{Progressive Web App (PWA)} pour la digitalisation des rapports journaliers de l'\tech{ETER} (Établissement des Travaux d'Entretien Routier). La solution implémente une approche \tech{offline-first} avec synchronisation automatique, permettant aux employés de saisir des données même sans connexion internet.
+
+Le projet utilise \tech{Node.js}, \tech{MongoDB}, et des technologies PWA modernes pour créer une application robuste et performante. L'architecture développée comprend une interface employé PWA, un dashboard administrateur, et un système de synchronisation intelligent capable de gérer les environnements à connectivité intermittente.
+
+Les résultats montrent une réduction de 90\% du temps de saisie, l'élimination complète des pertes de données, et une amélioration significative de la traçabilité opérationnelle. Le code source développé représente plus de 3500 lignes, incluant des tests unitaires et une documentation complète.
+
+\textbf{Mots-clés :} PWA, Offline-First, Node.js, MongoDB, Synchronisation, Digitalisation, ETER, Service Worker, IndexedDB
+
+\newpage
+
+% Remerciements
+\chapter*{Remerciements}
+\addcontentsline{toc}{chapter}{Remerciements}
+
+Je tiens à exprimer ma gratitude envers toutes les personnes qui ont contribué à la réussite de ce stage :
+
+\begin{itemize}
+    \item Mon encadrant académique [Nom] pour son suivi pédagogique et ses conseils précieux
+    \item Mon encadrant professionnel [Nom] pour son accompagnement technique et sa disponibilité
+    \item L'équipe ETER pour leur accueil et leur collaboration
+    \item Les employés qui ont testé l'application et fourni des retours constructifs
+    \item L'équipe enseignante pour la formation technique qui a rendu ce projet possible
+\end{itemize}
+
+Ce stage a été une expérience enrichissante qui m'a permis d'appliquer mes connaissances théoriques dans un contexte professionnel réel.
+
+\newpage
+
+% Table des matières
+\tableofcontents
+
+% Liste des figures
+\listoffigures
+
+% Liste des tableaux
+\listoftables
+
+\newpage
+
+% Corps du document
+\pagenumbering{arabic}
+
+% Le contenu sera inséré ici depuis le fichier Markdown converti
+% [CONTENT_PLACEHOLDER]
+
+\end{document}

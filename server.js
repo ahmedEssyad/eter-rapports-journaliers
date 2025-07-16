@@ -800,7 +800,7 @@ app.get('/api/admin/reports/:id/pdf', authenticateToken, async (req, res) => {
             const rowData = [
                 vehicle.matricule || '',
                 vehicle.chauffeur || '',
-                '', // Signature (espace vide pour l'instant)
+                vehicle.signatureDriver ? 'Signé' : '', // Signature chauffeur
                 vehicle.heureRevif || '',
                 vehicle.quantiteLivree ? vehicle.quantiteLivree.toString() : '',
                 vehicle.lieuComptage || '',
@@ -813,8 +813,38 @@ app.get('/api/admin/reports/:id/pdf', authenticateToken, async (req, res) => {
             
             rowData.forEach((cell, j) => {
                 doc.rect(x, currentY, colWidths[j], 20).stroke();
-                doc.fontSize(8).font('Helvetica');
-                doc.text(cell, x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                
+                // Traitement spécial pour la colonne signature (index 2)
+                if (j === 2 && vehicle.signatureDriver) {
+                    try {
+                        // Vérifier si c'est une signature base64
+                        if (vehicle.signatureDriver.startsWith('data:image/')) {
+                            // Extraire les données base64
+                            const base64Data = vehicle.signatureDriver.split(',')[1];
+                            const buffer = Buffer.from(base64Data, 'base64');
+                            
+                            // Afficher la signature dans le PDF
+                            doc.image(buffer, x + 2, currentY + 2, { 
+                                width: colWidths[j] - 4, 
+                                height: 16,
+                                fit: [colWidths[j] - 4, 16]
+                            });
+                        } else {
+                            // Fallback: afficher "Signé"
+                            doc.fontSize(8).font('Helvetica');
+                            doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                        }
+                    } catch (e) {
+                        console.error('Erreur signature chauffeur:', e);
+                        doc.fontSize(8).font('Helvetica');
+                        doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                    }
+                } else {
+                    // Affichage normal pour les autres colonnes
+                    doc.fontSize(8).font('Helvetica');
+                    doc.text(cell, x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                }
+                
                 x += colWidths[j];
             });
             
@@ -1078,6 +1108,7 @@ function generateConsolidatedDailyReport(doc, forms, date) {
                     numero: entryNumber++,
                     matricule: vehicle.matricule || '',
                     chauffeur: vehicle.chauffeur || '',
+                    signatureDriver: vehicle.signatureDriver || null,
                     signatureDriverUrl: vehicle.signatureDriverUrl || null,
                     heureRevif: vehicle.heureRevif || '',
                     quantiteLivree: vehicle.quantiteLivree || 0,
@@ -1239,8 +1270,56 @@ function generateSingleReportPDF(doc, form, isConsolidated = false) {
         
         rowData.forEach((cell, j) => {
             doc.rect(x, currentY, colWidths[j], 20).stroke();
-            doc.fontSize(8).font('Helvetica');
-            doc.text(cell, x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+            
+            // Traitement spécial pour la colonne signature (index 3 dans le mode consolidé)
+            if (j === 3 && (vehicle.signatureDriver || vehicle.signatureDriverUrl)) {
+                try {
+                    // Vérifier si c'est une signature base64
+                    if (vehicle.signatureDriver && vehicle.signatureDriver.startsWith('data:image/')) {
+                        // Extraire les données base64
+                        const base64Data = vehicle.signatureDriver.split(',')[1];
+                        const buffer = Buffer.from(base64Data, 'base64');
+                        
+                        // Afficher la signature dans le PDF
+                        doc.image(buffer, x + 2, currentY + 2, { 
+                            width: colWidths[j] - 4, 
+                            height: 16,
+                            fit: [colWidths[j] - 4, 16]
+                        });
+                    } else if (vehicle.signatureDriverUrl) {
+                        // Essayer de charger depuis un fichier si c'est une URL
+                        try {
+                            const sigPath = path.join(__dirname, 'public', vehicle.signatureDriverUrl.replace(/^\//, ''));
+                            if (fs.existsSync(sigPath)) {
+                                doc.image(sigPath, x + 2, currentY + 2, { 
+                                    width: colWidths[j] - 4, 
+                                    height: 16,
+                                    fit: [colWidths[j] - 4, 16]
+                                });
+                            } else {
+                                doc.fontSize(8).font('Helvetica');
+                                doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                            }
+                        } catch (e) {
+                            doc.fontSize(8).font('Helvetica');
+                            doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                        }
+                    } else {
+                        // Fallback: afficher "Signé"
+                        doc.fontSize(8).font('Helvetica');
+                        doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                    }
+                } catch (e) {
+                    console.error('Erreur signature chauffeur consolidée:', e);
+                    doc.fontSize(8).font('Helvetica');
+                    doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                }
+            } else {
+                // Affichage normal pour les autres colonnes
+                doc.fontSize(8).font('Helvetica');
+                doc.text(cell, x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+            }
+            
             x += colWidths[j];
         });
         
