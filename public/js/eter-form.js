@@ -139,6 +139,10 @@ class ETERForm {
         modal.style.display = 'block';
         modal.style.opacity = '1';
         modal.style.visibility = 'visible';
+        
+        // Fix aria-hidden accessibility issue
+        modal.removeAttribute('aria-hidden');
+        
         console.log('Modal displayed');
     }
 
@@ -282,14 +286,44 @@ class ETERForm {
         const modalTitle = document.getElementById('signatureModalLabel');
         modalTitle.textContent = 'Signature du Chauffeur';
         
+        if (!modal) {
+            console.error('Error: Modal not found');
+            return;
+        }
+        
+        this.canvas = document.getElementById('signatureCanvas');
+        if (!this.canvas) {
+            console.error('Error: Canvas not found');
+            return;
+        }
+
+        // Set canvas size
+        this.canvas.width = 500;
+        this.canvas.height = 300;
+        
+        this.ctx = this.canvas.getContext('2d');
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.strokeStyle = '#000';
+        this.ctx.lineWidth = 2;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        
+        // Mouse events
+        this.canvas.onmousedown = this.startDrawing.bind(this);
+        this.canvas.onmousemove = this.draw.bind(this);
+        this.canvas.onmouseup = this.stopDrawing.bind(this);
+        this.canvas.onmouseout = this.stopDrawing.bind(this);
+        
+        // Touch events
+        this.canvas.ontouchstart = this.handleTouch.bind(this);
+        this.canvas.ontouchmove = this.handleTouch.bind(this);
+        this.canvas.ontouchend = this.stopDrawing.bind(this);
+        
+        // Show modal
         modal.style.display = 'block';
         
-        // Clear previous signature
-        const canvas = document.getElementById('signatureCanvas');
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        this.setupSignatureCanvas();
+        // Fix aria-hidden accessibility issue
+        modal.removeAttribute('aria-hidden');
     }
 
 
