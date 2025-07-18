@@ -289,7 +289,24 @@
     <div class="toast-container" id="toastContainer">
         <!-- Toasts will be added dynamically -->
     </div>
+    
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Chargement en cours...</div>
+        </div>
+    </div>
+    
+    <!-- Network Status -->
+    <div id="networkStatus" class="network-status">
+        <div class="network-indicator online">
+            <span class="indicator-dot"></span>
+            <span class="indicator-text">En ligne</span>
+        </div>
+    </div>
 
     <script src="/js/admin-dashboard.js"></script>
+    <script src="/js/admin-dashboard-enhancements.js"></script>
 </body>
 </html>
