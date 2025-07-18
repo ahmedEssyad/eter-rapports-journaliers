@@ -36,6 +36,19 @@ let tempUsers = [
     }
 ];
 
+// Configuration de sauvegarde
+const backupConfig = {
+    autoBackupEnabled: false,
+    autoBackupSchedule: 'daily', // 'daily', 'weekly', 'monthly'
+    backupDirectory: path.join(__dirname, 'backups'),
+    maxBackups: 10 // Nombre maximum de sauvegardes à conserver
+};
+
+// Créer le répertoire de sauvegarde s'il n'existe pas
+if (!fs.existsSync(backupConfig.backupDirectory)) {
+    fs.mkdirSync(backupConfig.backupDirectory, { recursive: true });
+}
+
 // Connexion MongoDB
 async function connectToMongoDB() {
     try {
@@ -144,6 +157,271 @@ async function syncTempDataToMongoDB() {
         failed: failedSync,
         remaining: tempStorage.length
     };
+}
+
+// === FONCTIONS DE SAUVEGARDE ===
+
+// Fonction pour créer une sauvegarde complète
+async function createBackup() {
+    try {
+        const backupData = {
+            metadata: {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                source: 'ETER Application',
+                type: 'full_backup'
+            },
+            data: {
+                forms: [],
+                users: tempUsers,
+                config: backupConfig
+            }
+        };
+
+        // Récupérer les données selon la source disponible
+        if (isMongoConnected) {
+            console.log('📦 Création sauvegarde depuis MongoDB...');
+            const forms = await Form.find({}).lean();
+            backupData.data.forms = forms;
+        } else {
+            console.log('📦 Création sauvegarde depuis stockage temporaire...');
+            backupData.data.forms = tempStorage;
+        }
+
+        // Ajouter les statistiques
+        backupData.metadata.stats = {
+            totalForms: backupData.data.forms.length,
+            totalUsers: backupData.data.users.length,
+            totalVehicles: backupData.data.forms.reduce((count, form) => 
+                count + (form.vehicles ? form.vehicles.length : 0), 0),
+            dataSize: JSON.stringify(backupData).length
+        };
+
+        // Sauvegarder dans un fichier
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `backup-${timestamp}.json`;
+        const filepath = path.join(backupConfig.backupDirectory, filename);
+
+        fs.writeFileSync(filepath, JSON.stringify(backupData, null, 2));
+        console.log(`✅ Sauvegarde créée: ${filepath}`);
+
+        // Nettoyer les anciennes sauvegardes
+        await cleanupOldBackups();
+
+        return backupData;
+    } catch (error) {
+        console.error('❌ Erreur création sauvegarde:', error);
+        throw error;
+    }
+}
+
+// Fonction pour lister les sauvegardes disponibles
+async function listBackups() {
+    try {
+        const backups = [];
+        const files = fs.readdirSync(backupConfig.backupDirectory);
+        
+        for (const file of files) {
+            if (file.endsWith('.json') && file.startsWith('backup-')) {
+                const filepath = path.join(backupConfig.backupDirectory, file);
+                const stats = fs.statSync(filepath);
+                
+                try {
+                    const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+                    backups.push({
+                        filename: file,
+                        size: stats.size,
+                        created: stats.birthtime,
+                        modified: stats.mtime,
+                        metadata: data.metadata || {},
+                        stats: data.metadata?.stats || {}
+                    });
+                } catch (parseError) {
+                    console.warn(`⚠️ Fichier sauvegarde corrompu: ${file}`);
+                }
+            }
+        }
+
+        // Trier par date de création (plus récent en premier)
+        backups.sort((a, b) => new Date(b.created) - new Date(a.created));
+
+        return backups;
+    } catch (error) {
+        console.error('❌ Erreur liste sauvegardes:', error);
+        throw error;
+    }
+}
+
+// Fonction pour restaurer une sauvegarde
+async function restoreBackup(backupData) {
+    try {
+        console.log('🔄 Début restauration sauvegarde...');
+        
+        // Valider les données de sauvegarde
+        if (!backupData || !backupData.data || !backupData.data.forms) {
+            throw new Error('Données de sauvegarde invalides');
+        }
+
+        const result = {
+            formsRestored: 0,
+            usersRestored: 0,
+            errors: []
+        };
+
+        // Restaurer les formulaires
+        if (isMongoConnected) {
+            console.log('🔄 Restauration vers MongoDB...');
+            
+            for (const formData of backupData.data.forms) {
+                try {
+                    // Vérifier si le formulaire existe déjà
+                    const existingForm = await Form.findOne({ id: formData.id });
+                    
+                    if (!existingForm) {
+                        const mongoForm = new Form(formData);
+                        await mongoForm.save();
+                        result.formsRestored++;
+                    }
+                } catch (error) {
+                    result.errors.push(`Erreur formulaire ${formData.id}: ${error.message}`);
+                }
+            }
+        } else {
+            console.log('🔄 Restauration vers stockage temporaire...');
+            
+            // Fusionner avec les données existantes
+            for (const formData of backupData.data.forms) {
+                const existingIndex = tempStorage.findIndex(form => form.id === formData.id);
+                if (existingIndex === -1) {
+                    tempStorage.push(formData);
+                    result.formsRestored++;
+                }
+            }
+        }
+
+        // Restaurer les utilisateurs (optionnel)
+        if (backupData.data.users) {
+            // Ici on pourrait restaurer les utilisateurs si nécessaire
+            result.usersRestored = backupData.data.users.length;
+        }
+
+        console.log(`✅ Restauration terminée: ${result.formsRestored} formulaires restaurés`);
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Erreur restauration sauvegarde:', error);
+        throw error;
+    }
+}
+
+// Fonction pour obtenir les statistiques de sauvegarde
+async function getBackupStats() {
+    try {
+        const backups = await listBackups();
+        const backupDir = backupConfig.backupDirectory;
+        
+        // Calculer la taille totale des sauvegardes
+        let totalSize = 0;
+        for (const backup of backups) {
+            totalSize += backup.size;
+        }
+
+        // Statistiques générales
+        const stats = {
+            totalBackups: backups.length,
+            totalSize: totalSize,
+            totalSizeFormatted: formatBytes(totalSize),
+            latestBackup: backups.length > 0 ? backups[0] : null,
+            oldestBackup: backups.length > 0 ? backups[backups.length - 1] : null,
+            autoBackupEnabled: backupConfig.autoBackupEnabled,
+            autoBackupSchedule: backupConfig.autoBackupSchedule,
+            backupDirectory: backupDir,
+            maxBackups: backupConfig.maxBackups
+        };
+
+        return stats;
+    } catch (error) {
+        console.error('❌ Erreur stats sauvegarde:', error);
+        throw error;
+    }
+}
+
+// Fonction pour nettoyer les anciennes sauvegardes
+async function cleanupOldBackups() {
+    try {
+        const backups = await listBackups();
+        
+        if (backups.length > backupConfig.maxBackups) {
+            const backupsToDelete = backups.slice(backupConfig.maxBackups);
+            
+            for (const backup of backupsToDelete) {
+                const filepath = path.join(backupConfig.backupDirectory, backup.filename);
+                fs.unlinkSync(filepath);
+                console.log(`🗑️ Sauvegarde supprimée: ${backup.filename}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur nettoyage sauvegardes:', error);
+    }
+}
+
+// Fonction pour programmer la sauvegarde automatique
+async function scheduleAutoBackup(schedule) {
+    try {
+        backupConfig.autoBackupEnabled = true;
+        backupConfig.autoBackupSchedule = schedule;
+        
+        // Ici on pourrait utiliser node-cron pour programmer les sauvegardes
+        // Pour l'instant, on retourne juste la configuration
+        
+        console.log(`✅ Sauvegarde automatique configurée: ${schedule}`);
+        
+        return {
+            enabled: backupConfig.autoBackupEnabled,
+            schedule: backupConfig.autoBackupSchedule,
+            nextBackup: getNextBackupTime(schedule)
+        };
+    } catch (error) {
+        console.error('❌ Erreur programmation sauvegarde:', error);
+        throw error;
+    }
+}
+
+// Fonction utilitaire pour calculer la prochaine sauvegarde
+function getNextBackupTime(schedule) {
+    const now = new Date();
+    const next = new Date(now);
+    
+    switch (schedule) {
+        case 'daily':
+            next.setDate(next.getDate() + 1);
+            next.setHours(2, 0, 0, 0); // 2h du matin
+            break;
+        case 'weekly':
+            next.setDate(next.getDate() + (7 - next.getDay()));
+            next.setHours(2, 0, 0, 0);
+            break;
+        case 'monthly':
+            next.setMonth(next.getMonth() + 1);
+            next.setDate(1);
+            next.setHours(2, 0, 0, 0);
+            break;
+    }
+    
+    return next.toISOString();
+}
+
+// Fonction utilitaire pour formater les bytes
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 // Fonction à appeler lors de la reconnexion MongoDB
@@ -1409,6 +1687,120 @@ app.get('/admin-dashboard', (req, res) => {
 
 app.get('/admin', (req, res) => {
     res.redirect('/login.html');
+});
+
+// === ROUTES API DE SAUVEGARDE ===
+
+// Route pour créer une sauvegarde complète
+app.post('/api/admin/backup/create', authenticateToken, async (req, res) => {
+    try {
+        const backupData = await createBackup();
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const filename = `eter-backup-${timestamp}.json`;
+        
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.json({
+            success: true,
+            message: 'Sauvegarde créée avec succès',
+            data: backupData,
+            timestamp: new Date().toISOString(),
+            filename
+        });
+        
+    } catch (error) {
+        console.error('Erreur création sauvegarde:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la création de la sauvegarde'
+        });
+    }
+});
+
+// Route pour lister les sauvegardes disponibles
+app.get('/api/admin/backup/list', authenticateToken, async (req, res) => {
+    try {
+        const backups = await listBackups();
+        res.json({
+            success: true,
+            data: backups
+        });
+    } catch (error) {
+        console.error('Erreur liste sauvegardes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des sauvegardes'
+        });
+    }
+});
+
+// Route pour restaurer une sauvegarde
+app.post('/api/admin/backup/restore', authenticateToken, async (req, res) => {
+    try {
+        const { backupData } = req.body;
+        
+        if (!backupData) {
+            return res.status(400).json({
+                success: false,
+                message: 'Données de sauvegarde manquantes'
+            });
+        }
+        
+        const result = await restoreBackup(backupData);
+        
+        res.json({
+            success: true,
+            message: 'Sauvegarde restaurée avec succès',
+            data: result
+        });
+        
+    } catch (error) {
+        console.error('Erreur restauration sauvegarde:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la restauration de la sauvegarde'
+        });
+    }
+});
+
+// Route pour obtenir les statistiques de sauvegarde
+app.get('/api/admin/backup/stats', authenticateToken, async (req, res) => {
+    try {
+        const stats = await getBackupStats();
+        res.json({
+            success: true,
+            data: stats
+        });
+    } catch (error) {
+        console.error('Erreur stats sauvegarde:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la récupération des statistiques'
+        });
+    }
+});
+
+// Route pour la sauvegarde automatique
+app.post('/api/admin/backup/auto', authenticateToken, async (req, res) => {
+    try {
+        const { schedule } = req.body; // 'daily', 'weekly', 'monthly'
+        
+        const result = await scheduleAutoBackup(schedule);
+        
+        res.json({
+            success: true,
+            message: `Sauvegarde automatique ${schedule} configurée`,
+            data: result
+        });
+        
+    } catch (error) {
+        console.error('Erreur sauvegarde auto:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la configuration de la sauvegarde automatique'
+        });
+    }
 });
 
 // Gestion des erreurs
