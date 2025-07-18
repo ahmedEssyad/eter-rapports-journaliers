@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - ETER Enhanced</title>
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/admin-enhanced.css">
+    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/assets/icon-192x192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div class="loading-text">Chargement en cours...</div>
+        </div>
+    </div>
+    
+    <!-- Network Status -->
+    <div id="networkStatus" class="network-status">
+        <div class="network-indicator online">
+            <span class="indicator-dot"></span>
+            <span class="indicator-text">En ligne</span>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="admin-header">
+        <div class="dashboard-container">
+            <div class="header-content">
+                <div class="header-main">
+                    <h1>Dashboard Administrateur ETER</h1>
+                    <p>Système de gestion des rapports journaliers - Version 2.0</p>
+                </div>
+                <div class="header-stats">
+                    <div class="header-stat">
+                        <div class="stat-number" id="headerTotalReports">0</div>
+                        <div class="stat-label">Rapports Total</div>
+                    </div>
+                    <div class="header-stat">
+                        <div class="stat-number" id="headerTodayReports">0</div>
+                        <div class="stat-label">Aujourd'hui</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="admin-nav">
+        <div class="dashboard-container">
+            <div class="nav-content">
+                <div class="nav-links">
+                    <a href="#dashboard" class="nav-link active" data-section="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">Tableau de bord</span>
+                    </a>
+                    <a href="#reports" class="nav-link" data-section="reports">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">Rapports</span>
+                    </a>
+                    <a href="#analytics" class="nav-link" data-section="analytics">
+                        <span class="nav-icon">📈</span>
+                        <span class="nav-text">Analytiques</span>
+                    </a>
+                    <a href="#settings" class="nav-link" data-section="settings">
+                        <span class="nav-icon">⚙️</span>
+                        <span class="nav-text">Paramètres</span>
+                    </a>
+                </div>
+                <div class="nav-actions">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            <span>A</span>
+                        </div>
+                        <div class="user-details">
+                            <span id="welcomeUser">Admin</span>
+                            <span class="user-role">Administrateur</span>
+                        </div>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">
+                        <span>🚪</span>
+                        Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-container">
+        <!-- Dashboard Section -->
+        <div id="dashboard-section" class="content-section">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <h3>Total Rapports</h3>
+                        <div class="stat-value" id="totalReports">0</div>
+                        <div class="stat-trend" id="reportsChange">
+                            <span class="trend-arrow">↗</span>
+                            <span class="trend-value">+0%</span>
+                            <span class="trend-period">ce mois</span>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress-bar" style="width: 75%"></div>
+                    </div>
+                </div>
+                <div class="stat-card secondary">
+                    <div class="stat-icon">🚛</div>
+                    <div class="stat-content">
+                        <h3>Véhicules Actifs</h3>
+                        <div class="stat-value" id="totalVehicles">0</div>
+                        <div class="stat-trend" id="vehiclesChange">
+                            <span class="trend-arrow">↗</span>
+                            <span class="trend-value">+0%</span>
+                            <span class="trend-period">ce mois</span>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress-bar" style="width: 60%"></div>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                        <h3>Conducteurs</h3>
+                        <div class="stat-value" id="totalDrivers">0</div>
+                        <div class="stat-trend" id="driversChange">
+                            <span class="trend-arrow">↗</span>
+                            <span class="trend-value">+0%</span>
+                            <span class="trend-period">ce mois</span>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress-bar" style="width: 85%"></div>
+                    </div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-icon">⛽</div>
+                    <div class="stat-content">
+                        <h3>Carburant Distribué</h3>
+                        <div class="stat-value" id="totalFuel">0</div>
+                        <div class="stat-trend" id="fuelChange">
+                            <span class="trend-value">L</span>
+                            <span class="trend-period">ce mois</span>
+                        </div>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="progress-bar" style="width: 40%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Analytics Section -->
+            <div class="analytics-section">
+                <div class="analytics-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Évolution des Rapports</h3>
+                            <div class="chart-controls">
+                                <select id="periodSelect" class="chart-select">
+                                    <option value="7">7 derniers jours</option>
+                                    <option value="30" selected>30 derniers jours</option>
+                                    <option value="90">90 derniers jours</option>
+                                </select>
+                                <button class="btn btn-sm btn-outline" onclick="refreshChart()">
+                                    🔄
+                                </button>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="reportsChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-card">
+                        <div class="activity-header">
+                            <h3>Activité Récente</h3>
+                            <div class="activity-controls">
+                                <button class="btn btn-sm btn-outline" onclick="refreshActivity()">
+                                    🔄 Actualiser
+                                </button>
+                            </div>
+                        </div>
+                        <div class="activity-list" id="activityList">
+                            <!-- Activity items will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-actions-header">
+                    <h3>Actions Rapides</h3>
+                    <div class="quick-actions-time">
+                        <span id="currentDateTime">--</span>
+                    </div>
+                </div>
+                <div class="quick-actions-grid">
+                    <button class="quick-action-btn primary" onclick="showSection('reports')">
+                        <div class="action-icon">📄</div>
+                        <div class="action-content">
+                            <div class="action-title">Voir Rapports</div>
+                            <div class="action-desc">Gérer tous les rapports</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn secondary" onclick="exportAllReports()">
+                        <div class="action-icon">📤</div>
+                        <div class="action-content">
+                            <div class="action-title">Exporter Tout</div>
+                            <div class="action-desc">PDF complet</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn success" onclick="showDailyExport()">
+                        <div class="action-icon">📅</div>
+                        <div class="action-content">
+                            <div class="action-title">Export Journalier</div>
+                            <div class="action-desc">Rapports par date</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn info" onclick="showAnalytics()">
+                        <div class="action-icon">📊</div>
+                        <div class="action-content">
+                            <div class="action-title">Analytiques</div>
+                            <div class="action-desc">Statistiques détaillées</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn warning" onclick="refreshData()">
+                        <div class="action-icon">🔄</div>
+                        <div class="action-content">
+                            <div class="action-title">Actualiser</div>
+                            <div class="action-desc">Recharger les données</div>
+                        </div>
+                    </button>
+                    <button class="quick-action-btn danger" onclick="showBackup()">
+                        <div class="action-icon">💾</div>
+                        <div class="action-content">
+                            <div class="action-title">Sauvegarde</div>
+                            <div class="action-desc">Sauvegarder BD</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reports-section" class="content-section" style="display: none;">
+            <!-- Enhanced Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <h3>Filtres Avancés</h3>
+                    <div class="filters-actions">
+                        <button class="btn btn-sm btn-outline" onclick="clearFilters()">
+                            🗑️ Effacer
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="saveFilters()">
+                            💾 Sauvegarder
+                        </button>
+                    </div>
+                </div>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="dateFromFilter">Date de début</label>
+                        <input type="date" id="dateFromFilter">
+                    </div>
+                    <div class="filter-group">
+                        <label for="dateToFilter">Date de fin</label>
+                        <input type="date" id="dateToFilter">
+                    </div>
+                    <div class="filter-group">
+                        <label for="vehicleFilter">Véhicule</label>
+                        <select id="vehicleFilter">
+                            <option value="">Tous les véhicules</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="driverFilter">Conducteur</label>
+                        <select id="driverFilter">
+                            <option value="">Tous les conducteurs</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="depotFilter">Dépôt</label>
+                        <select id="depotFilter">
+                            <option value="">Tous les dépôts</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="statusFilter">Statut</label>
+                        <select id="statusFilter">
+                            <option value="">Tous les statuts</option>
+                            <option value="completed">Complété</option>
+                            <option value="pending">En attente</option>
+                            <option value="synced">Synchronisé</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filters-actions-bottom">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        🔍 Appliquer les Filtres
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportFilteredReports()">
+                        📤 Exporter Résultats
+                    </button>
+                </div>
+            </div>
+
+            <!-- Enhanced Actions -->
+            <div class="actions-section">
+                <div class="actions-left">
+                    <button class="btn btn-success" onclick="exportSelectedReports()">
+                        📤 Exporter Sélection
+                    </button>
+                    <div class="export-menu">
+                        <button class="btn btn-info" onclick="toggleExportMenu()">
+                            📊 Export Avancé ▼
+                        </button>
+                        <div class="export-dropdown" id="exportDropdown">
+                            <button class="export-option" onclick="exportToExcel()">
+                                📊 Excel (.xlsx)
+                            </button>
+                            <button class="export-option" onclick="exportToCSV()">
+                                📄 CSV
+                            </button>
+                            <button class="export-option" onclick="exportToPDF()">
+                                📋 PDF
+                            </button>
+                            <button class="export-option" onclick="exportToJSON()">
+                                📝 JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions-right">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="Rechercher..." id="searchInput">
+                        <button class="btn btn-sm btn-primary" onclick="searchReports()">
+                            🔍
+                        </button>
+                    </div>
+                    <button class="btn btn-warning" onclick="refreshReports()">
+                        🔄 Actualiser
+                    </button>
+                </div>
+            </div>
+
+            <!-- Enhanced Reports Table -->
+            <div class="reports-section">
+                <div class="section-header">
+                    <h2>Liste des Rapports</h2>
+                    <div class="table-info" id="tableInfo">
+                        <span class="info-count">0 rapports trouvés</span>
+                        <span class="info-selected" id="selectedCount">0 sélectionnés</span>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="reports-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                </th>
+                                <th class="sortable" onclick="sortTable('date')">
+                                    Date
+                                    <span class="sort-indicator">⇅</span>
+                                </th>
+                                <th class="sortable" onclick="sortTable('vehicleId')">
+                                    Véhicule
+                                    <span class="sort-indicator">⇅</span>
+                                </th>
+                                <th class="sortable" onclick="sortTable('driver')">
+                                    Conducteur
+                                    <span class="sort-indicator">⇅</span>
+                                </th>
+                                <th class="sortable" onclick="sortTable('depot')">
+                                    Dépôt
+                                    <span class="sort-indicator">⇅</span>
+                                </th>
+                                <th class="sortable" onclick="sortTable('totalFuel')">
+                                    Carburant (L)
+                                    <span class="sort-indicator">⇅</span>
+                                </th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTableBody">
+                            <tr>
+                                <td colspan="8" class="loading">
+                                    <div class="loading-content">
+                                        <div class="loading-spinner-small"></div>
+                                        <span>Chargement des données...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Enhanced Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Affichage 1-10 de 0 rapports</span>
+                    </div>
+                    <div class="pagination" id="pagination">
+                        <!-- Pagination will be generated dynamically -->
+                    </div>
+                    <div class="pagination-size">
+                        <select id="pageSize" onchange="changePageSize()">
+                            <option value="10">10 par page</option>
+                            <option value="25">25 par page</option>
+                            <option value="50">50 par page</option>
+                            <option value="100">100 par page</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="content-section" style="display: none;">
+            <div class="analytics-container">
+                <div class="analytics-header">
+                    <h2>Analytiques Avancées</h2>
+                    <div class="analytics-controls">
+                        <select id="analyticsTimeframe">
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois</option>
+                            <option value="quarter">Ce trimestre</option>
+                            <option value="year">Cette année</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="refreshAnalytics()">
+                            🔄 Actualiser
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="analytics-grid">
+                    <div class="chart-card large">
+                        <div class="chart-header">
+                            <h3>Consommation de Carburant</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="fuelChart" width="600" height="300"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Répartition par Dépôt</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="depotChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Performance des Conducteurs</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="driversChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div id="settings-section" class="content-section" style="display: none;">
+            <div class="settings-container">
+                <div class="settings-tabs">
+                    <button class="settings-tab active" onclick="showSettingsTab('general')">
+                        ⚙️ Général
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('backup')">
+                        💾 Sauvegarde
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('notifications')">
+                        🔔 Notifications
+                    </button>
+                    <button class="settings-tab" onclick="showSettingsTab('security')">
+                        🔒 Sécurité
+                    </button>
+                </div>
+                
+                <div class="settings-content">
+                    <div id="general-settings" class="settings-panel active">
+                        <h3>Paramètres Généraux</h3>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <label>Langue de l'Interface</label>
+                                <select id="interfaceLanguage">
+                                    <option value="fr">Français</option>
+                                    <option value="ar">العربية</option>
+                                    <option value="en">English</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Format de Date</label>
+                                <select id="dateFormat">
+                                    <option value="dd/mm/yyyy">JJ/MM/AAAA</option>
+                                    <option value="mm/dd/yyyy">MM/JJ/AAAA</option>
+                                    <option value="yyyy-mm-dd">AAAA-MM-JJ</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Fuseau Horaire</label>
+                                <select id="timezone">
+                                    <option value="Africa/Casablanca">Casablanca (GMT+1)</option>
+                                    <option value="Africa/Algiers">Alger (GMT+1)</option>
+                                    <option value="Africa/Tunis">Tunis (GMT+1)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="backup-settings" class="settings-panel">
+                        <h3>Paramètres de Sauvegarde</h3>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <label>Sauvegarde Automatique</label>
+                                <select id="autoBackup">
+                                    <option value="daily">Quotidienne</option>
+                                    <option value="weekly">Hebdomadaire</option>
+                                    <option value="monthly">Mensuelle</option>
+                                </select>
+                            </div>
+                            <div class="setting-item">
+                                <label>Rétention des Données</label>
+                                <select id="dataRetention">
+                                    <option value="1">1 an</option>
+                                    <option value="2">2 ans</option>
+                                    <option value="5">5 ans</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="notifications-settings" class="settings-panel">
+                        <h3>Paramètres de Notifications</h3>
+                        <div class="settings-grid">
+                            <div class="setting-item checkbox">
+                                <label>
+                                    <input type="checkbox" id="emailNotifications" checked>
+                                    <span class="checkmark"></span>
+                                    Notifications par email
+                                </label>
+                            </div>
+                            <div class="setting-item checkbox">
+                                <label>
+                                    <input type="checkbox" id="pushNotifications" checked>
+                                    <span class="checkmark"></span>
+                                    Notifications push
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="security-settings" class="settings-panel">
+                        <h3>Paramètres de Sécurité</h3>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <label>Durée de Session</label>
+                                <select id="sessionDuration">
+                                    <option value="1">1 heure</option>
+                                    <option value="8">8 heures</option>
+                                    <option value="24">24 heures</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-actions">
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        💾 Sauvegarder les Paramètres
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetSettings()">
+                        🔄 Réinitialiser
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Modals -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Détails du Rapport</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Daily Export Modal -->
+    <div id="dailyExportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">📅 Export Journalier</h3>
+                <button class="close-btn" onclick="closeDailyExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="daily-export-form">
+                    <div class="form-group">
+                        <label for="dailyExportDate">Sélectionnez une date :</label>
+                        <input type="date" id="dailyExportDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <div id="dailyExportInfo" class="export-info">
+                            <p>Sélectionnez une date pour voir les rapports disponibles.</p>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="closeDailyExportModal()">Annuler</button>
+                        <button class="btn btn-primary" onclick="previewDailyReports()" id="previewBtn">
+                            👁️ Aperçu
+                        </button>
+                        <button class="btn btn-success" onclick="exportDailyReports()" id="exportBtn" disabled>
+                            📥 Exporter PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer">
+        <!-- Toasts will be added dynamically -->
+    </div>
+
+    <script src="/js/admin-dashboard-enhanced.js"></script>
+</body>
+</html>
