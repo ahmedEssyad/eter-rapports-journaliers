@@ -46,9 +46,12 @@ class AdminDashboard {
     initializeEventListeners() {
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
-                e.preventDefault();
                 const section = link.dataset.section;
-                this.showSection(section);
+                if (section) {
+                    e.preventDefault();
+                    this.showSection(section);
+                }
+                // Les liens sans data-section (comme backup-manager.html) naviguent normalement
             });
         });
         

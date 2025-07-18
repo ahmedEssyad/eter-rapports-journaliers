@@ -1093,10 +1093,15 @@ app.get('/api/admin/reports/:id/pdf', authenticateToken, async (req, res) => {
                 doc.rect(x, currentY, colWidths[j], 20).stroke();
                 
                 // Traitement spécial pour la colonne signature (index 2)
-                if (j === 2 && vehicle.signatureDriver) {
+                if (j === 2 && (vehicle.signatureDriver || vehicle.signatureDriverUrl)) {
+                    console.log(`DEBUG: Traitement signature pour véhicule ${vehicle.matricule}:`, {
+                        hasSignatureDriver: !!vehicle.signatureDriver,
+                        hasSignatureDriverUrl: !!vehicle.signatureDriverUrl,
+                        signatureDriverType: vehicle.signatureDriver ? typeof vehicle.signatureDriver : 'none'
+                    });
                     try {
-                        // Vérifier si c'est une signature base64
-                        if (vehicle.signatureDriver.startsWith('data:image/')) {
+                        // Priorité à signatureDriver si disponible
+                        if (vehicle.signatureDriver && vehicle.signatureDriver.startsWith('data:image/')) {
                             // Extraire les données base64
                             const base64Data = vehicle.signatureDriver.split(',')[1];
                             const buffer = Buffer.from(base64Data, 'base64');
@@ -1107,6 +1112,26 @@ app.get('/api/admin/reports/:id/pdf', authenticateToken, async (req, res) => {
                                 height: 16,
                                 fit: [colWidths[j] - 4, 16]
                             });
+                        } else if (vehicle.signatureDriverUrl) {
+                            // Essayer de charger depuis un fichier si c'est une URL
+                            try {
+                                const sigPath = path.join(__dirname, 'public', vehicle.signatureDriverUrl.replace(/^\//, ''));
+                                if (fs.existsSync(sigPath)) {
+                                    doc.image(sigPath, x + 2, currentY + 2, { 
+                                        width: colWidths[j] - 4, 
+                                        height: 16,
+                                        fit: [colWidths[j] - 4, 16]
+                                    });
+                                } else {
+                                    console.log(`Fichier signature introuvable: ${sigPath}`);
+                                    doc.fontSize(8).font('Helvetica');
+                                    doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                                }
+                            } catch (e) {
+                                console.error('Erreur chargement fichier signature:', e);
+                                doc.fontSize(8).font('Helvetica');
+                                doc.text('Signé', x + 2, currentY + 6, { width: colWidths[j] - 4, align: 'center' });
+                            }
                         } else {
                             // Fallback: afficher "Signé"
                             doc.fontSize(8).font('Helvetica');
