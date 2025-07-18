@@ -1781,6 +1781,96 @@ app.get('/api/admin/backup/stats', authenticateToken, async (req, res) => {
     }
 });
 
+// Route pour récupérer les détails d'une sauvegarde
+app.get('/api/admin/backup/:filename', authenticateToken, async (req, res) => {
+    try {
+        const filename = req.params.filename;
+        const backupPath = path.join(backupConfig.backupDirectory, filename);
+        
+        if (!fs.existsSync(backupPath)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Fichier de sauvegarde non trouvé'
+            });
+        }
+        
+        const backupData = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+        
+        res.json({
+            success: true,
+            data: backupData
+        });
+    } catch (error) {
+        console.error('Erreur lecture sauvegarde:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la lecture de la sauvegarde'
+        });
+    }
+});
+
+// Route pour supprimer une sauvegarde
+app.delete('/api/admin/backup/:filename', authenticateToken, async (req, res) => {
+    try {
+        const filename = req.params.filename;
+        const backupPath = path.join(backupConfig.backupDirectory, filename);
+        
+        if (!fs.existsSync(backupPath)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Fichier de sauvegarde non trouvé'
+            });
+        }
+        
+        fs.unlinkSync(backupPath);
+        
+        res.json({
+            success: true,
+            message: 'Sauvegarde supprimée avec succès'
+        });
+    } catch (error) {
+        console.error('Erreur suppression sauvegarde:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors de la suppression de la sauvegarde'
+        });
+    }
+});
+
+// Route pour nettoyer les anciennes sauvegardes
+app.post('/api/admin/backup/cleanup', authenticateToken, async (req, res) => {
+    try {
+        const backups = await listBackups();
+        const toDelete = backups.length > backupConfig.maxBackups ? 
+            backups.slice(backupConfig.maxBackups) : [];
+        
+        let deletedCount = 0;
+        for (const backup of toDelete) {
+            try {
+                const backupPath = path.join(backupConfig.backupDirectory, backup.filename);
+                if (fs.existsSync(backupPath)) {
+                    fs.unlinkSync(backupPath);
+                    deletedCount++;
+                }
+            } catch (error) {
+                console.error(`Erreur suppression ${backup.filename}:`, error);
+            }
+        }
+        
+        res.json({
+            success: true,
+            message: `${deletedCount} sauvegardes supprimées`,
+            deletedCount
+        });
+    } catch (error) {
+        console.error('Erreur nettoyage sauvegardes:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erreur lors du nettoyage des sauvegardes'
+        });
+    }
+});
+
 // Route pour la sauvegarde automatique
 app.post('/api/admin/backup/auto', authenticateToken, async (req, res) => {
     try {
