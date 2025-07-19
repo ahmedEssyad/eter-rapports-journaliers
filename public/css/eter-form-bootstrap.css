@@ -1244,3 +1244,33 @@ body {
     display: none;
   }
 }
+
+/* CORRECTION CRITIQUE: Colonne Signature manquante dans le CSS responsive */
+/* Force la visibilité de la colonne Signature (colonne 3) */
+.vehicle-table th:nth-child(3), 
+.vehicle-table td:nth-child(3) {
+  min-width: 120px !important;
+  width: 120px !important;
+  max-width: 120px !important;
+}
+
+/* Correction pour tous les breakpoints responsive */
+@media (max-width: 768px) {
+  .vehicle-table th:nth-child(3), 
+  .vehicle-table td:nth-child(3) {
+    min-width: 100px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .vehicle-table th:nth-child(3), 
+  .vehicle-table td:nth-child(3) {
+    min-width: 90px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .vehicle-table tbody td:nth-child(3):before {
+    content: "Signature: ";
+  }
+}

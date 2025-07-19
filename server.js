@@ -698,11 +698,21 @@ app.post('/api/forms', async (req, res) => {
             sortieGasoil: Number(sortieGasoil),
             debutIndex: Number(debutIndex),
             finIndex: Number(finIndex),
-            vehicles: vehicles.map((v, index) => ({
-                ...v,
-                quantiteLivree: Number(v.quantiteLivree),
-                signatureDriverUrl: v.signatureDriver ? saveSignatureFile(v.signatureDriver, `${id || generateUniqueId()}_driver_${index}`) : null
-            })),
+            vehicles: vehicles.map((v, index) => {
+                console.log(`DEBUG: Véhicule ${index + 1} lors de la sauvegarde:`, {
+                    matricule: v.matricule,
+                    chauffeur: v.chauffeur,
+                    hasSignatureDriver: !!v.signatureDriver,
+                    signatureDriverLength: v.signatureDriver ? v.signatureDriver.length : 0,
+                    signatureDriverPreview: v.signatureDriver ? v.signatureDriver.substring(0, 50) + '...' : 'none'
+                });
+                
+                return {
+                    ...v,
+                    quantiteLivree: Number(v.quantiteLivree),
+                    signatureDriverUrl: v.signatureDriver ? saveSignatureFile(v.signatureDriver, `${id || generateUniqueId()}_driver_${index}`) : null
+                };
+            }),
             signatureResponsable,
             signatureUrlResponsable,
             signatureChef,
